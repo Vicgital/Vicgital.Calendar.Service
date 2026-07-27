@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/.deployment/">
+    <File Path="nuget.config" />
+  </Folder>
+  <Folder Name="/database/">
+    <Project Path="database/Vicgital.Calendar.Database/Vicgital.Calendar.Database.sqlproj" Id="ba6d4438-a27d-4803-8016-4883a46f19f3">
+      <Build />
+      <Deploy />
+    </Project>
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Vicgital.Calendar.Application/Vicgital.Calendar.Application.csproj" />
+    <Project Path="src/Vicgital.Calendar.Domain/Vicgital.Calendar.Domain.csproj" />
+    <Project Path="src/Vicgital.Calendar.Infrastructure/Vicgital.Calendar.Infrastructure.csproj" />
+    <Project Path="src/Vicgital.Calendar.Service.Definition/Vicgital.Calendar.Service.Definition.csproj" Id="aaa43517-59ba-4b1b-a9cf-abb6e987ebcb" />
+    <Project Path="src/Vicgital.Calendar.Service/Vicgital.Calendar.Service.csproj" />
+    <Project Path="src/Vicgital.Calendar.Setup/Vicgital.Calendar.Setup.csproj" Id="2d029f37-87fa-47e8-b4e6-453a7a5ba4c3" />
+  </Folder>
+  <Folder Name="/test/" />
+</Solution>

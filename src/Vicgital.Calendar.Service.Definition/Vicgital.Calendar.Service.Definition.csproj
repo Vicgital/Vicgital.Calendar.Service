@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<AssemblyName>Vicgital.Calendar.Service.Definition</AssemblyName>
+		<PackageId>Vicgital.Calendar.Service.Definition</PackageId>
+		<Version>1.0.0</Version>
+		<Authors>Vicgital</Authors>
+		<RepositoryUrl>https://github.com/vicgital/Vicgital.Calendar.Service</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageDescription>GRPC Service Definition for Calendar Service</PackageDescription>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Google.Protobuf" Version="3.35.1" />
+		<PackageReference Include="Grpc.Core" Version="2.46.6" />
+		<PackageReference Include="Grpc.Tools" Version="2.83.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+
+	<ItemGroup>
+		<Protobuf Include="protos\calendar.proto" GrpcServices="Both" />
+	</ItemGroup>
+
+
+	<ItemGroup>
+	  <Folder Include="protos\" />
+	</ItemGroup>
+
+</Project>

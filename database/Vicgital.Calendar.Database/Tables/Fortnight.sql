@@ -1,0 +1,19 @@
+﻿CREATE TABLE [dbo].[Fortnight]
+(
+	[Id]            INT IDENTITY(1,1) NOT FOR REPLICATION NOT NULL, 
+	[Code]          NVARCHAR(50) NOT NULL,
+	[StartDate]     DATE NOT NULL,
+	[EndDate]       DATE NOT NULL,
+	[DateCreated]   DATETIME NOT NULL DEFAULT SYSUTCDATETIME(),
+	CONSTRAINT [PK_Fortnight] PRIMARY KEY CLUSTERED ([Id] ASC) WITH (PAD_INDEX = OFF, DATA_COMPRESSION = PAGE )
+)
+GO
+
+CREATE UNIQUE INDEX [IX_Fortnight_Code] ON [dbo].[Fortnight] ([Code] ASC) WITH (PAD_INDEX = OFF, DATA_COMPRESSION = PAGE )
+
+GO
+
+CREATE UNIQUE INDEX [IX_Fortnight_StartDate_EndDate] ON [dbo].[Fortnight] ([StartDate] ASC, [EndDate] ASC) WITH (PAD_INDEX = OFF, DATA_COMPRESSION = PAGE )
+
+
+

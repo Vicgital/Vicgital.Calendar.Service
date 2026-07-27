@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Vicgital.Core.Configuration" Version="1.0.0" />
+		<PackageReference Include="Vicgital.Core.Logging" Version="1.0.0" />
+		<PackageReference Include="Vicgital.Data.Sql" Version="1.0.2" />
+	</ItemGroup>
+	
+
+  <ItemGroup>
+    <ProjectReference Include="..\Vicgital.Calendar.Application\Vicgital.Calendar.Application.csproj" />
+    <ProjectReference Include="..\Vicgital.Calendar.Domain\Vicgital.Calendar.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
