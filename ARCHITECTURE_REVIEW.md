@@ -155,7 +155,7 @@ Since this is explicitly headed for Kubernetes, a few things will matter sooner 
 - Consider a proto `oneof` for the recurring "either an int Id or a string Code" pattern (`QuarterRequest`, `WeekRequest`, `FortnightRequest`) instead of two loosely-related fields plus runtime `if (Id > 0) ... else if (!string.IsNullOrWhiteSpace(Code))` checks in three places. `oneof identifier { int32 id = 1; string code = 2; }` makes "exactly one of these" part of the contract instead of a convention enforced by hand in every handler.
 - `Vicgital.Calendar.Service.Definition.csproj` references `Grpc.Core` (2.46.6) — the older, native-dependent gRPC C-core implementation that Google has put into maintenance mode in favor of grpc-dotnet (`Grpc.Net.Client`/`Grpc.AspNetCore`, which the `Service` project already correctly uses). Since `Service.Definition` is shipped as a standalone NuGet package that other services/clients will depend on, pulling in `Grpc.Core` means every consumer also pulls in its native platform binaries for no benefit — the generated code only actually needs `Grpc.Core.Api` (lightweight, no native deps) plus `Google.Protobuf`.
 - Repositories use `SELECT *` throughout. Dapper maps by column name so this won't break today (extra columns like `DateCreated` are simply ignored), but explicit column lists are more resilient to future schema changes and self-document what the query actually needs.
-- `WeekComponent.CreateWeeksByQuarter` throws `InvalidOperationException` for "already exists," while `QuarterComponent.CreateQuartersByYear` throws `BusinessRuleViolationException` for the same kind of condition. Worth standardizing on one exception type for "this business rule was violated" so a future gRPC interceptor (see above) can map it consistently.
+- ~~`WeekComponent.CreateWeeksByQuarter` throws `InvalidOperationException` for "already exists," while `QuarterComponent.CreateQuartersByYear` throws `BusinessRuleViolationException` for the same kind of condition. Worth standardizing on one exception type for "this business rule was violated" so a future gRPC interceptor (see above) can map it consistently.~~
 - `QuarterComponent.CreateQuartersByYear` inserts quarters one at a time in a loop with no transaction — if insert *N* fails, quarters *1..N-1* are already committed with no rollback. Low risk today since it's only invoked from the single-threaded `Setup` console tool, but worth wrapping in a transaction if this ever becomes reachable from a live request path.
 
 ---
@@ -163,8 +163,8 @@ Since this is explicitly headed for Kubernetes, a few things will matter sooner 
 ## If You Want a Short Punch List
 
 1. ~~Fix the swallowed-`RpcException` bug in `CalendarService` (delete the redundant inline validation, or re-throw `RpcException` before the generic catch).~~
-2. Extract the exception→gRPC-status mapping into a single `Interceptor` instead of repeating it per method.
+2. ~~Extract the exception→gRPC-status mapping into a single `Interceptor` instead of repeating it per method.~~
 3. Decide Fortnight's design (component-mediated, like Week/Quarter) before implementing it, and remove the direct `IFortnightRepository` injection from `CalendarService`.
 4. Stand up a Domain unit test project and cover `QuarterHelper`/`WeekHelper` across a range of years — this is your highest-value, lowest-effort testing investment.
-5. Either wire `Mapper.cs` up for real or delete it.
+5. ~~Either wire `Mapper.cs` up for real or delete it.~~
 6. Add a `Dockerfile` and double check the HTTP/2-only Kestrel config against how you intend to probe this in Kubernetes.

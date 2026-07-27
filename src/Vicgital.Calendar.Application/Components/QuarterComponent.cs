@@ -55,7 +55,7 @@ namespace Vicgital.Calendar.Application.Components
                     result.Add(QuarterDTO.MapFromDTO(newQuarter));
                 }
                 else
-                    throw new BusinessRuleViolationException($"Quarter {quarter.Code} already exists in the database.");
+                    throw new InvalidOperationException($"Quarter {quarter.Code} already exists in the database.");
             }
 
             return result;

@@ -19,8 +19,6 @@ service Calendar {
 
 }
 
-message EmptyRequest {}
-
 message DateRequest {
 	string date = 1;
 }
@@ -43,10 +41,6 @@ message WeekModel {
 
 message YearRequest {
 	int32 year = 1;
-}
-
-message QuarterCodeRequest {
-	string code = 2;
 }
 
 message QuarterRequest {
