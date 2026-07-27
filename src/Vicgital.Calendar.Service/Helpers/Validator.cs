@@ -9,7 +9,7 @@ namespace Vicgital.Calendar.Service.Helpers
             if (request == null)
                 throw new Grpc.Core.RpcException(new Grpc.Core.Status(Grpc.Core.StatusCode.InvalidArgument, "Request cannot be null."));
             if (request.Id <= 0 && string.IsNullOrWhiteSpace(request.Code))
-                throw new Grpc.Core.RpcException(new Grpc.Core.Status(Grpc.Core.StatusCode.InvalidArgument, "Either Quarter ID or Code must be provided."));            
+                throw new Grpc.Core.RpcException(new Grpc.Core.Status(Grpc.Core.StatusCode.InvalidArgument, "Either Quarter ID or Code must be provided."));
         }
 
         public static void Validate(this YearRequest request)
@@ -29,7 +29,7 @@ namespace Vicgital.Calendar.Service.Helpers
         }
 
         public static void Validate(this WeekRequest request)
-        {            
+        {
             if (request == null)
                 throw new Grpc.Core.RpcException(new Grpc.Core.Status(Grpc.Core.StatusCode.InvalidArgument, "Request cannot be null."));
             if (request.Id <= 0 && string.IsNullOrWhiteSpace(request.Code))

@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/.deployment/">
+    <File Path="ARCHITECTURE_REVIEW.md" />
     <File Path="nuget.config" />
   </Folder>
   <Folder Name="/database/">

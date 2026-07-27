@@ -1,8 +1,6 @@
 using Grpc.Core;
-using System.Runtime.CompilerServices;
 using Vicgital.Application.Shared.Exceptions;
 using Vicgital.Calendar.Application.Interfaces.Components;
-using Vicgital.Calendar.Application.Interfaces.Repositories;
 using Vicgital.Calendar.Domain.Entities;
 using Vicgital.Calendar.Service.Definition;
 using Vicgital.Calendar.Service.Helpers;
@@ -13,13 +11,13 @@ namespace Vicgital.Calendar.Service.Implementation
         ILogger<CalendarService> logger,
         IWeekComponent weekComponent,
         IQuarterComponent quarterComponent,
-        IFortnightRepository fortnightRepository
+        IFortnightComponent fortnightComponent
         ) : Definition.Calendar.CalendarBase
     {
         private readonly ILogger<CalendarService> _logger = logger;
         private readonly IWeekComponent _weekComponent = weekComponent;
         private readonly IQuarterComponent _quarterComponent = quarterComponent;
-        private readonly IFortnightRepository _fortnightRepository = fortnightRepository;
+        private readonly IFortnightComponent _fortnightComponent = fortnightComponent;
 
         #region Quarter
 
@@ -29,32 +27,15 @@ namespace Vicgital.Calendar.Service.Implementation
 
             try
             {
-                if (request.Id > 0)
-                {
-                    var quarter = await _quarterComponent.GetQuarterAsync(request.Id);
-                    return new QuarterModel
-                    {
-                        Id = quarter.Id,
-                        Code = quarter.Code,
-                        StartDate = quarter.StartDate.ToString("MM/dd/yyyy"),
-                        EndDate = quarter.EndDate.ToString("MM/dd/yyyy")
-                    };
+                var quarter = request.Id > 0
+                    ? await _quarterComponent.GetQuarterAsync(request.Id)
+                    : await _quarterComponent.GetQuarterAsync(request.Code);
 
-                }
-                else if (!string.IsNullOrWhiteSpace(request.Code))
-                {
-                    var quarter = await _quarterComponent.GetQuarterAsync(request.Code);
-                    return new QuarterModel
-                    {
-                        Id = quarter.Id,
-                        Code = quarter.Code,
-                        StartDate = quarter.StartDate.ToString("MM/dd/yyyy"),
-                        EndDate = quarter.EndDate.ToString("MM/dd/yyyy")
-                    };
-                }
-                else
-                    throw new RpcException(new Status(StatusCode.InvalidArgument, "Either Quarter ID or Code must be provided."));
-
+                return quarter.ToProto();
+            }
+            catch (RpcException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -78,15 +59,13 @@ namespace Vicgital.Calendar.Service.Implementation
                 QuartersReply reply = new();
 
                 var quarters = await _quarterComponent.GetQuartersByYearAsync(request.Year);
-                reply.Quarters.AddRange(quarters.Select(q => new QuarterModel
-                {
-                    Id = q.Id,
-                    Code = q.Code,
-                    StartDate = q.StartDate.ToString("MM/dd/yyyy"),
-                    EndDate = q.EndDate.ToString("MM/dd/yyyy")
-                }));
+                reply.Quarters.AddRange(quarters.Select(q => q.ToProto()));
 
                 return reply;
+            }
+            catch (RpcException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -108,13 +87,11 @@ namespace Vicgital.Calendar.Service.Implementation
             try
             {
                 var quarter = await _quarterComponent.GetQuarterByDateAsync(DateOnly.Parse(request.Date));
-                return new QuarterModel
-                {
-                    Id = quarter.Id,
-                    Code = quarter.Code,
-                    StartDate = quarter.StartDate.ToString("MM/dd/yyyy"),
-                    EndDate = quarter.EndDate.ToString("MM/dd/yyyy")
-                };
+                return quarter.ToProto();
+            }
+            catch (RpcException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -139,31 +116,15 @@ namespace Vicgital.Calendar.Service.Implementation
 
             try
             {
-                if (request.Id > 0)
-                {
-                    var week = await _weekComponent.GetWeekAsync(request.Id);
-                    return new WeekModel
-                    {
-                        Id = week.Id,
-                        Code = week.Code,
-                        StartDate = week.StartDate.ToString("MM/dd/yyyy"),
-                        EndDate = week.EndDate.ToString("MM/dd/yyyy")
-                    };
+                var week = request.Id > 0
+                    ? await _weekComponent.GetWeekAsync(request.Id)
+                    : await _weekComponent.GetWeekAsync(request.Code);
 
-                }
-                else if (!string.IsNullOrWhiteSpace(request.Code))
-                {
-                    var week = await _weekComponent.GetWeekAsync(request.Code);
-                    return new WeekModel
-                    {
-                        Id = week.Id,
-                        Code = week.Code,
-                        StartDate = week.StartDate.ToString("MM/dd/yyyy"),
-                        EndDate = week.EndDate.ToString("MM/dd/yyyy")
-                    };
-                }
-                else
-                    throw new RpcException(new Status(StatusCode.InvalidArgument, "Either Week ID or Code must be provided."));
+                return week.ToProto();
+            }
+            catch (RpcException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -184,28 +145,17 @@ namespace Vicgital.Calendar.Service.Implementation
             try
             {
                 WeeksReply reply = new();
-                IReadOnlyList<Week> weeks;
+                IReadOnlyList<Week> weeks = request.Id > 0
+                    ? await _weekComponent.GetWeeksByQuarterAsync(request.Id)
+                    : await _weekComponent.GetWeeksByQuarterAsync(request.Code);
 
-                if (request.Id > 0)
-                {
-                    weeks = await _weekComponent.GetWeeksByQuarterAsync(request.Id);
-                }
-                else if (!string.IsNullOrWhiteSpace(request.Code))
-                {
-                    weeks = await _weekComponent.GetWeeksByQuarterAsync(request.Code);
-                }
-                else
-                    throw new RpcException(new Status(StatusCode.InvalidArgument, "Either Quarter ID or Code must be provided."));
-
-                reply.Weeks.AddRange(weeks.Select(w => new WeekModel
-                {
-                    Id = w.Id,
-                    Code = w.Code,
-                    StartDate = w.StartDate.ToString("MM/dd/yyyy"),
-                    EndDate = w.EndDate.ToString("MM/dd/yyyy")
-                }));
+                reply.Weeks.AddRange(weeks.Select(w => w.ToProto()));
 
                 return reply;
+            }
+            catch (RpcException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -226,13 +176,11 @@ namespace Vicgital.Calendar.Service.Implementation
             try
             {
                 var week = await _weekComponent.GetWeekByDateAsync(DateOnly.Parse(request.Date));
-                return new WeekModel
-                {
-                    Id = week.Id,
-                    Code = week.Code,
-                    StartDate = week.StartDate.ToString("MM/dd/yyyy"),
-                    EndDate = week.EndDate.ToString("MM/dd/yyyy")
-                };
+                return week.ToProto();
+            }
+            catch (RpcException)
+            {
+                throw;
             }
             catch (Exception ex)
             {

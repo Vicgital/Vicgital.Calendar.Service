@@ -1,5 +1,5 @@
-using Vicgital.Calendar.Service.Implementation;
 using Vicgital.Calendar.Service;
+using Vicgital.Calendar.Service.Implementation;
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddConfiguration(Vicgital.Core.Configuration.ConfigurationBuilder.BuildConfiguration());
 
