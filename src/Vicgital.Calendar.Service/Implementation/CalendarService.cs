@@ -20,11 +20,11 @@ namespace Vicgital.Calendar.Service.Implementation
 
         public async override Task<QuarterModel> GetQuarter(QuarterRequest request, ServerCallContext context)
         {
-            var quarter = request.Id > 0
+            var result = request.Id > 0
                 ? await _quarterComponent.GetQuarterAsync(request.Id)
                 : await _quarterComponent.GetQuarterAsync(request.Code);
 
-            return quarter.ToProto();
+            return result.Unwrap().ToProto();
         }
 
         public async override Task<QuartersReply> GetQuartersByYear(YearRequest request, ServerCallContext context)
@@ -39,8 +39,8 @@ namespace Vicgital.Calendar.Service.Implementation
 
         public async override Task<QuarterModel> GetQuarterByDate(DateRequest request, ServerCallContext context)
         {
-            var quarter = await _quarterComponent.GetQuarterByDateAsync(DateOnly.Parse(request.Date));
-            return quarter.ToProto();
+            var result = await _quarterComponent.GetQuarterByDateAsync(DateOnly.Parse(request.Date));
+            return result.Unwrap().ToProto();
         }
 
         #endregion
@@ -49,11 +49,11 @@ namespace Vicgital.Calendar.Service.Implementation
 
         public async override Task<WeekModel> GetWeek(WeekRequest request, ServerCallContext context)
         {
-            var week = request.Id > 0
+            var result = request.Id > 0
                 ? await _weekComponent.GetWeekAsync(request.Id)
                 : await _weekComponent.GetWeekAsync(request.Code);
 
-            return week.ToProto();
+            return result.Unwrap().ToProto();
         }
 
         public async override Task<WeeksReply> GetWeeksByQuarter(QuarterRequest request, ServerCallContext context)
@@ -70,8 +70,8 @@ namespace Vicgital.Calendar.Service.Implementation
 
         public async override Task<WeekModel> GetWeekByDate(DateRequest request, ServerCallContext context)
         {
-            var week = await _weekComponent.GetWeekByDateAsync(DateOnly.Parse(request.Date));
-            return week.ToProto();
+            var result = await _weekComponent.GetWeekByDateAsync(DateOnly.Parse(request.Date));
+            return result.Unwrap().ToProto();
         }
 
         #endregion

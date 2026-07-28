@@ -1,4 +1,4 @@
-﻿using Vicgital.Application.Shared.Exceptions;
+﻿using Vicgital.Application.Shared.Results;
 using Vicgital.Calendar.Application.DTO;
 using Vicgital.Calendar.Application.Interfaces.Components;
 using Vicgital.Calendar.Application.Interfaces.Repositories;
@@ -15,16 +15,20 @@ namespace Vicgital.Calendar.Application.Components
         private readonly IWeekRepository _repository = repository;
         private readonly IQuarterRepository _quarterRepository = quarterRepository;
 
-        public async Task<Week> GetWeekAsync(string code, CancellationToken cancellationToken = default)
+        public async Task<Result<Week>> GetWeekAsync(string code, CancellationToken cancellationToken = default)
         {
             var week = await _repository.GetWeekAsync(code, cancellationToken);
-            return week == null ? throw new NotFoundException($"Week with code {code} not found.") : WeekDTO.MapFromDTO(week);
+            return week == null
+                ? Error.NotFound("week_not_found", $"Week with code {code} not found.")
+                : WeekDTO.MapFromDTO(week);
         }
 
-        public async Task<Week> GetWeekAsync(int id, CancellationToken cancellationToken = default)
+        public async Task<Result<Week>> GetWeekAsync(int id, CancellationToken cancellationToken = default)
         {
             var week = await _repository.GetWeekAsync(id, cancellationToken);
-            return week == null ? throw new NotFoundException($"Week with ID {id} not found.") : WeekDTO.MapFromDTO(week);
+            return week == null
+                ? Error.NotFound("week_not_found", $"Week with ID {id} not found.")
+                : WeekDTO.MapFromDTO(week);
         }
 
         public async Task<IReadOnlyList<Week>> GetWeeksByQuarterAsync(string quarterCode, CancellationToken cancellationToken = default)
@@ -39,10 +43,12 @@ namespace Vicgital.Calendar.Application.Components
             return [.. weeks.Select(WeekDTO.MapFromDTO)];
         }
 
-        public async Task<Week> GetWeekByDateAsync(DateOnly date, CancellationToken ct = default)
+        public async Task<Result<Week>> GetWeekByDateAsync(DateOnly date, CancellationToken ct = default)
         {
             var week = await _repository.GetWeekByDateAsync(date.ToDateTime(TimeOnly.MinValue), ct);
-            return week == null ? throw new NotFoundException($"Week for date {date} not found.") : WeekDTO.MapFromDTO(week);
+            return week == null
+                ? Error.NotFound("week_not_found", $"Week for date {date} not found.")
+                : WeekDTO.MapFromDTO(week);
         }
 
         public async Task<IReadOnlyList<Week>> CreateWeeksByQuarter(string quarterCode, CancellationToken ct = default)

@@ -1,6 +1,6 @@
 ﻿
 
-using Vicgital.Application.Shared.Exceptions;
+using Vicgital.Application.Shared.Results;
 using Vicgital.Calendar.Application.DTO;
 using Vicgital.Calendar.Application.Interfaces.Components;
 using Vicgital.Calendar.Application.Interfaces.Repositories;
@@ -14,22 +14,28 @@ namespace Vicgital.Calendar.Application.Components
     {
         private readonly IQuarterRepository _repository = repository;
 
-        public async Task<Quarter> GetQuarterAsync(string code, CancellationToken cancellationToken = default)
+        public async Task<Result<Quarter>> GetQuarterAsync(string code, CancellationToken cancellationToken = default)
         {
             var quarter = await _repository.GetQuarterAsync(code, cancellationToken);
-            return quarter == null ? throw new NotFoundException($"Quarter with code {code} not found.") : QuarterDTO.MapFromDTO(quarter);
+            return quarter == null
+                ? Error.NotFound("quarter_not_found", $"Quarter with code {code} not found.")
+                : QuarterDTO.MapFromDTO(quarter);
         }
 
-        public async Task<Quarter> GetQuarterAsync(int id, CancellationToken cancellationToken = default)
+        public async Task<Result<Quarter>> GetQuarterAsync(int id, CancellationToken cancellationToken = default)
         {
             var quarter = await _repository.GetQuarterAsync(id, cancellationToken);
-            return quarter == null ? throw new NotFoundException($"Quarter with id {id} not found.") : QuarterDTO.MapFromDTO(quarter);
+            return quarter == null
+                ? Error.NotFound("quarter_not_found", $"Quarter with id {id} not found.")
+                : QuarterDTO.MapFromDTO(quarter);
         }
 
-        public async Task<Quarter> GetQuarterByDateAsync(DateOnly date, CancellationToken ct = default)
+        public async Task<Result<Quarter>> GetQuarterByDateAsync(DateOnly date, CancellationToken ct = default)
         {
             var quarter = await _repository.GetQuarterByDate(date.ToDateTime(TimeOnly.MinValue), ct);
-            return quarter == null ? throw new NotFoundException($"Quarter for date {date} not found.") : QuarterDTO.MapFromDTO(quarter);
+            return quarter == null
+                ? Error.NotFound("quarter_not_found", $"Quarter for date {date} not found.")
+                : QuarterDTO.MapFromDTO(quarter);
         }
 
         public async Task<IReadOnlyList<Quarter>> GetQuartersByYearAsync(int year, CancellationToken cancellationToken = default)
