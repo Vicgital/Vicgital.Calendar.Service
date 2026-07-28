@@ -3,12 +3,6 @@
     <File Path="ARCHITECTURE_REVIEW.md" />
     <File Path="nuget.config" />
   </Folder>
-  <Folder Name="/database/">
-    <Project Path="database/Vicgital.Calendar.Database/Vicgital.Calendar.Database.sqlproj" Id="ba6d4438-a27d-4803-8016-4883a46f19f3">
-      <Build />
-      <Deploy />
-    </Project>
-  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Vicgital.Calendar.Application/Vicgital.Calendar.Application.csproj" />
     <Project Path="src/Vicgital.Calendar.Domain/Vicgital.Calendar.Domain.csproj" />

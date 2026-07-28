@@ -40,7 +40,7 @@ namespace Vicgital.Calendar.Service
         {
             var connectionString = SqlDbConnectionStringHelper.GetSqlDbConnectionString(
                         Environment.GetEnvironmentVariable("SQLDB_SERVER") ?? throw new InvalidOperationException("SQLDB_SERVER environment variable is not set."),
-                        Data.Sql.Enums.Databases.Calendar,
+                        Data.Sql.Enums.Databases.LifeOS,
                         "",
                         Environment.GetEnvironmentVariable("SQLDB_USERNAME") ?? throw new InvalidOperationException("SQLDB_USERNAME environment variable is not set."),
                         Environment.GetEnvironmentVariable("SQLDB_PASSWORD") ?? throw new InvalidOperationException("SQLDB_PASSWORD environment variable is not set.")
