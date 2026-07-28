@@ -4,7 +4,6 @@ using Vicgital.Calendar.Application.Components;
 using Vicgital.Calendar.Application.Interfaces.Components;
 using Vicgital.Calendar.Application.Interfaces.Repositories;
 using Vicgital.Calendar.Infrastructure.Repositories;
-using Vicgital.Core.Configuration.Extensions;
 using Vicgital.Core.Logging.Serilog.Configuration;
 using Vicgital.Core.Logging.Serilog.Extensions;
 using Vicgital.Data.Sql.Extensions;
@@ -16,7 +15,7 @@ namespace Vicgital.Calendar.Setup
     {
         internal static void SetupServices(this ServiceCollection services, IConfiguration config)
         {
-            services.AddAppConfiguration(config);
+            services.AddSingleton(config);
 
             // Create Logger
             var loggerConfiguration = LoggerConfigurationBuilder.BuildDefault(Serilog.Events.LogEventLevel.Information);

@@ -7,8 +7,6 @@
   </PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Vicgital.Core.Configuration" Version="1.0.0" />
-		<PackageReference Include="Vicgital.Core.Logging" Version="1.0.0" />
 		<PackageReference Include="Vicgital.Data.Sql" Version="1.0.3" />
 	</ItemGroup>
 	

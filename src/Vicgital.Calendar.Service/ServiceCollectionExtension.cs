@@ -1,10 +1,10 @@
-﻿using Vicgital.Calendar.Application.Components;
+﻿using FluentValidation;
+using Vicgital.Calendar.Application.Components;
 using Vicgital.Calendar.Application.Interfaces.Components;
 using Vicgital.Calendar.Application.Interfaces.Repositories;
 using Vicgital.Calendar.Infrastructure.Repositories;
-using Vicgital.Core.Configuration.Extensions;
-using Vicgital.Core.Logging.Serilog.Configuration;
-using Vicgital.Core.Logging.Serilog.Extensions;
+using Vicgital.Calendar.Service.Definition;
+using Vicgital.Calendar.Service.Validators;
 using Vicgital.Data.Sql.Extensions;
 using Vicgital.Data.Sql.Helpers;
 
@@ -12,15 +12,8 @@ namespace Vicgital.Calendar.Service
 {
     internal static class ServiceCollectionExtension
     {
-        internal static void SetupServices(this IServiceCollection services, IConfiguration config)
+        internal static void SetupServices(this IServiceCollection services)
         {
-            services.AddAppConfiguration(config);
-
-            // Create Logger
-            var loggerConfiguration = LoggerConfigurationBuilder.BuildDefault(Serilog.Events.LogEventLevel.Information);
-            var logger = loggerConfiguration.CreateLogger();
-            services.AddSerilogLogging(logger);
-
             // Add Database
             services.AddVicgitalDataSqlDapper(GetSqlConnectionString());
 
@@ -34,9 +27,14 @@ namespace Vicgital.Calendar.Service
             services.AddScoped<IWeekComponent, WeekComponent>();
             services.AddScoped<IFortnightComponent, FortnightComponent>();
 
+            // Add Validators
+            services.AddScoped<IValidator<QuarterRequest>, QuarterRequestValidator>();
+            services.AddScoped<IValidator<YearRequest>, YearRequestValidator>();
+            services.AddScoped<IValidator<DateRequest>, DateRequestValidator>();
+            services.AddScoped<IValidator<WeekRequest>, WeekRequestValidator>();
         }
 
-        private static string GetSqlConnectionString()
+        static string GetSqlConnectionString()
         {
             var connectionString = SqlDbConnectionStringHelper.GetSqlDbConnectionString(
                         Environment.GetEnvironmentVariable("SQLDB_SERVER") ?? throw new InvalidOperationException("SQLDB_SERVER environment variable is not set."),

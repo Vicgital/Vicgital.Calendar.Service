@@ -20,8 +20,6 @@ namespace Vicgital.Calendar.Service.Implementation
 
         public async override Task<QuarterModel> GetQuarter(QuarterRequest request, ServerCallContext context)
         {
-            request.Validate();
-
             var quarter = request.Id > 0
                 ? await _quarterComponent.GetQuarterAsync(request.Id)
                 : await _quarterComponent.GetQuarterAsync(request.Code);
@@ -31,8 +29,6 @@ namespace Vicgital.Calendar.Service.Implementation
 
         public async override Task<QuartersReply> GetQuartersByYear(YearRequest request, ServerCallContext context)
         {
-            request.Validate();
-
             QuartersReply reply = new();
 
             var quarters = await _quarterComponent.GetQuartersByYearAsync(request.Year);
@@ -43,8 +39,6 @@ namespace Vicgital.Calendar.Service.Implementation
 
         public async override Task<QuarterModel> GetQuarterByDate(DateRequest request, ServerCallContext context)
         {
-            request.Validate();
-
             var quarter = await _quarterComponent.GetQuarterByDateAsync(DateOnly.Parse(request.Date));
             return quarter.ToProto();
         }
@@ -55,8 +49,6 @@ namespace Vicgital.Calendar.Service.Implementation
 
         public async override Task<WeekModel> GetWeek(WeekRequest request, ServerCallContext context)
         {
-            request.Validate();
-
             var week = request.Id > 0
                 ? await _weekComponent.GetWeekAsync(request.Id)
                 : await _weekComponent.GetWeekAsync(request.Code);
@@ -66,8 +58,6 @@ namespace Vicgital.Calendar.Service.Implementation
 
         public async override Task<WeeksReply> GetWeeksByQuarter(QuarterRequest request, ServerCallContext context)
         {
-            request.Validate();
-
             WeeksReply reply = new();
             IReadOnlyList<Week> weeks = request.Id > 0
                 ? await _weekComponent.GetWeeksByQuarterAsync(request.Id)
@@ -80,8 +70,6 @@ namespace Vicgital.Calendar.Service.Implementation
 
         public async override Task<WeekModel> GetWeekByDate(DateRequest request, ServerCallContext context)
         {
-            request.Validate();
-
             var week = await _weekComponent.GetWeekByDateAsync(DateOnly.Parse(request.Date));
             return week.ToProto();
         }
