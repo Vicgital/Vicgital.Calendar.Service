@@ -13,8 +13,6 @@ var app = builder.Build();
 app.UseRouting();
 app.MapGrpcService<CalendarService>();
 app.MapVicgitalGrpcEndpoints();
-app.MapGet("/", () => "Calendar Service is running!");
-
 
 app.Run();
 

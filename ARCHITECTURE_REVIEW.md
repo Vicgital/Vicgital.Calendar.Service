@@ -2,6 +2,8 @@
 
 *Reviewed 2026-07-26. Scope: full solution (`src/`, `database/`, solution/build files). This is the first microservice in a planned Home Lab / LifeOS platform, so recommendations lean toward what will pay off as more services are added and Kubernetes enters the picture.*
 
+*Round 2 addendum added 2026-07-28, after several Round 1 items were fixed and a shared `Vicgital.Grpc` package was extracted. See [Round 2 Review](#round-2-review--2026-07-28) at the bottom for what changed and what's new.*
+
 ## Overall Impression
 
 This is a solid first microservice. The layering is genuinely correct (not just labeled correctly), the domain logic for date math is isolated and dependency-free, and the choice to ship the gRPC contract as its own versioned NuGet package (`Vicgital.Calendar.Service.Definition`) is a mature decision that will scale well across many microservices. The main gaps are the kind you'd expect from a "v1, still wiring things up" project: zero automated tests, some copy-pasted boilerplate, an unfinished feature (Fortnight) that's wired inconsistently, and a couple of real bugs in the gRPC error-handling path. None of this is a redesign — it's tightening.
@@ -164,7 +166,94 @@ Since this is explicitly headed for Kubernetes, a few things will matter sooner 
 
 1. ~~Fix the swallowed-`RpcException` bug in `CalendarService` (delete the redundant inline validation, or re-throw `RpcException` before the generic catch).~~
 2. ~~Extract the exception→gRPC-status mapping into a single `Interceptor` instead of repeating it per method.~~
-3. Decide Fortnight's design (component-mediated, like Week/Quarter) before implementing it, and remove the direct `IFortnightRepository` injection from `CalendarService`.
-4. Stand up a Domain unit test project and cover `QuarterHelper`/`WeekHelper` across a range of years — this is your highest-value, lowest-effort testing investment.
+3. ~~Decide Fortnight's design (component-mediated, like Week/Quarter) before implementing it, and remove the direct `IFortnightRepository` injection from `CalendarService`.~~ *(`CalendarService` now injects `IFortnightComponent`; the component itself is still an empty stub — see Round 2.)*
+4. Stand up a Domain unit test project and cover `QuarterHelper`/`WeekHelper` across a range of years — this is your highest-value, lowest-effort testing investment. **Still not done — still the top priority.**
 5. ~~Either wire `Mapper.cs` up for real or delete it.~~
-6. Add a `Dockerfile` and double check the HTTP/2-only Kestrel config against how you intend to probe this in Kubernetes.
+6. Add a `Dockerfile` and double check the HTTP/2-only Kestrel config against how you intend to probe this in Kubernetes. **Still not done.**
+
+---
+
+## Round 2 Review — 2026-07-28
+
+*Scope: `Vicgital.Calendar.Service` at commit `f347c2e` ("Code Refactor and Enhancements"), plus the new `Vicgital.Grpc` shared package it now depends on (`C:\Git\Vicgital\Vicgital.Grpc`, commit `f7de780`). This round focuses on what changed since Round 1, since most of that section still applies unchanged.*
+
+### What Actually Got Fixed
+
+- **Hosting model corrected.** `Program.cs` now uses `WebApplication.CreateBuilder` (via a new `VicgitalGrpcService.CreateWebApplicationBuilder` helper in `Vicgital.Grpc`) instead of the old `Host.CreateDefaultBuilder` + `ConfigureWebHostDefaults` combination that couldn't actually expose `MapGrpcService`/`MapGet`.
+- **Exception→status mapping extracted for real**, into `Vicgital.Grpc.Interceptors.ExceptionHandlerInterceptor`, registered once via `AddGrpc(o => o.Interceptors.Add<...>())` instead of repeated per-method try/catch. Round 1's swallowed-`RpcException` bug is fully gone — `catch (RpcException) { throw; }` is now the first catch clause.
+- **Validation unified.** The manual `Helpers/Validator.cs` + duplicated inline `Id`/`Code` checks are gone, replaced by FluentValidation validators (`Validators/*.cs`) resolved and run automatically by `Vicgital.Grpc.Interceptors.ValidationInterceptor` before any service method executes. Round 1's "duplicate validation, two mechanisms" issue is resolved at the root, not just patched.
+- **`Mapper.cs` is real** — every RPC now calls `.ToProto()` instead of hand-rolling the same object initializer six times.
+- **Fortnight layering fixed** — `CalendarService` now injects `IFortnightComponent`, not `IFortnightRepository` directly. (The component is still an empty stub, which is fine — that was always tracked as a separate, larger "design Fortnight" task, not a layering bug.)
+- **Reflection + real gRPC health checks** are now wired up via `MapVicgitalGrpcEndpoints()`, using the standard gRPC Health Checking Protocol instead of nothing.
+
+This is good progress, and notably it was accomplished by pulling the cross-cutting pieces (hosting, interceptors, health/reflection) out into a shared `Vicgital.Grpc` package rather than just patching them locally — the right move given more services are coming.
+
+### 🔴 New Bug: `NotFoundException`/`BusinessRuleViolationException` no longer map to the correct gRPC status — this is a regression
+
+`ExceptionHandlerInterceptor` in `Vicgital.Grpc` was deliberately written with **no dependency on `Vicgital.Application.Shared`** — it only special-cases `ArgumentException` → `InvalidArgument`; everything else, including `RpcException`'s catch-all sibling, falls through to `Internal`:
+
+```csharp
+private RpcException ToRpcException(Exception ex, ServerCallContext context, object? request = null)
+{
+    if (ex is ArgumentException)
+    {
+        _logger.LogWarning(ex, "{Method} - invalid argument ({Request})", context.Method, request);
+        return new RpcException(new Status(StatusCode.InvalidArgument, ex.Message));
+    }
+
+    _logger.LogError(ex, "{Method} - unhandled exception ({Request})", context.Method, request);
+    return new RpcException(new Status(StatusCode.Internal, "An unexpected error occurred."));
+}
+```
+
+That's the correct architectural call for the generic package (a transport-plumbing library shouldn't hard-depend on your app's exception taxonomy — this is exactly the tradeoff discussed when `Vicgital.Grpc` was being designed). But **nothing replaced the mapping it removed.** `QuarterComponent`/`WeekComponent` still throw `NotFoundException` from `Vicgital.Application.Shared.Exceptions` on every not-found lookup (`GetQuarter`, `GetWeek`, `GetQuarterByDate`, `GetWeekByDate`, `GetWeeksByQuarter`). Today, a client asking for a quarter that doesn't exist gets `StatusCode.Internal` / "An unexpected error occurred" instead of `StatusCode.NotFound` — worse behavior than Round 1's original bug, not better, even though the code causing it is architecturally cleaner.
+
+Concretely: **`request.Id = 99999` on `GetQuarter` now returns `Internal`, not `NotFound`.**
+
+Fix: build the small adapter package/registration discussed earlier (a `Vicgital.Grpc`-consuming piece — could be as small as one extra interceptor or a pluggable exception-mapper registered from `Vicgital.Calendar.Service` itself) that maps `NotFoundException` → `NotFound`, `BusinessRuleViolationException` → `FailedPrecondition`, etc., and slot it into the interceptor pipeline alongside (before) `ExceptionHandlerInterceptor`. Until then, this is the most user-visible bug in the service — worse than "Internal" being merely unhelpful, it's actively misleading (every 404-shaped case looks like a server crash).
+
+### 🔴 New Bug: date validation and date parsing disagree with each other
+
+`Validators/DateRequestValidator.cs` validates with `DateTime.TryParse(date, out _)`, but the actual usage in `CalendarService` parses with `DateOnly.Parse(request.Date)`:
+
+```csharp
+// DateRequestValidator — what determines "valid"
+.Must(date => DateTime.TryParse(date, out _))
+
+// CalendarService.GetQuarterByDate / GetWeekByDate — what actually runs
+DateOnly.Parse(request.Date)
+```
+
+`DateOnly.Parse` is stricter than `DateTime.TryParse` (e.g. a string with a time component parses fine as a `DateTime` but throws `FormatException` from `DateOnly.Parse`). Since `FormatException` isn't `ArgumentException`, it isn't special-cased by `ExceptionHandlerInterceptor` either — it also falls through to `Internal`. So the validator gives a false sense of safety: some inputs that pass validation still crash the request path afterward. Fix: validate with the same parser you consume with — `DateOnly.TryParse(date, out _)` in the validator — so "passed validation" and "will parse downstream" are actually the same claim.
+
+### 🟡 Dead config: `Kestrel:EndpointDefaults:Protocols` in `appsettings.json`
+
+Kestrel is now configured entirely in code by `VicgitalGrpcService.CreateWebApplicationBuilder` (`ConfigureKestrel` + `ListenAnyIP(port, o => o.Protocols = HttpProtocols.Http2)`), which never reads the `Kestrel` config section. `appsettings.json`'s `"Kestrel": { "EndpointDefaults": { "Protocols": "Http2" } }` block is now inert — it looks like it's controlling the protocol, but changing it would do nothing. Worth deleting so nobody loses time "fixing" it later.
+
+### 🟡 The plaintext `/` route is now both redundant and still broken for its apparent purpose
+
+`Program.cs` still has `app.MapGet("/", () => "Calendar Service is running!")` alongside the new `MapVicgitalGrpcEndpoints()` (which adds a real gRPC health check). The `/` route is no longer needed for basic liveness signaling now that a proper health check exists, and — as noted in Round 1 — it still won't respond to a plain HTTP/1.1 `GET` (e.g. a naive Kubernetes `httpGet` probe) since the Kestrel endpoint is HTTP/2-only. Either delete it, or if it's meant as a human-friendly smoke-test URL, that's fine, but don't rely on it for anything infrastructure-facing — use the gRPC health check for that.
+
+### Everything Else From Round 1 — Still Open, Unchanged
+
+These weren't touched in this pass and the Round 1 write-up still applies as-is:
+- `Vicgital.Calendar.Service.Definition.csproj` still references the legacy `Grpc.Core` (2.46.6) instead of just `Grpc.Core.Api`, forcing native deps on every consumer of the published contract package.
+- Package version drift (`Grpc.Tools 2.83.0` / `Grpc.AspNetCore 2.80.0` / `Grpc.Core 2.46.6`) — still no `Directory.Packages.props`/CPM.
+- No `Directory.Build.props` — `TargetFramework`/`Nullable`/`ImplicitUsings` still repeated per `.csproj`.
+- `GetSqlConnectionString()` is still byte-for-byte duplicated between `Vicgital.Calendar.Service` and `Vicgital.Calendar.Setup`'s `ServiceCollectionExtension.cs`.
+- DTO/Domain duplication remains (`QuarterDTO`/`WeekDTO`/`FortnightDTO` mirror the Domain entities exactly except `DateTime` vs `DateOnly`), and `MapFromDTO`/`MapToDTO` naming still reads backwards.
+- `TimeOnly.MinValue` (in the Components) vs `new TimeOnly()` (in the DTOs) — same value, still two spellings.
+- Repositories still use `SELECT *` throughout.
+- `QuarterComponent.CreateQuartersByYear` still loops inserts with no transaction.
+- No test project anywhere in the solution — `QuarterHelper`/`WeekHelper` are still untested. **This is still the single highest-value gap**, and it's now compounded: `Vicgital.Grpc`'s interceptor pipeline (validation ordering, exception mapping) is shared, untested infrastructure that every future service will inherit bugs from — the `NotFoundException` regression above is exactly the kind of thing a test suite around the interceptor pipeline would have caught before it shipped.
+- Still no `Dockerfile`, no `global.json`. The only CI workflow (`.github/workflows/publish_package.yml`) packs and pushes `Vicgital.Calendar.Service.Definition` on every push/PR to `main` — there is still no `dotnet build`/`dotnet test` gate for the service itself.
+- `calendar.proto` still has the unreferenced `QuarterCodeRequest`/`EmptyRequest` messages (with `QuarterCodeRequest`'s field numbering starting at `2`), no `oneof` for the recurring Id-or-Code pattern, and dates are still `MM/dd/yyyy` strings.
+
+### Updated Punch List
+
+1. **Fix the `NotFoundException`/`BusinessRuleViolationException` → `Internal` regression** — highest priority, it's a live behavioral regression, not a style nit.
+2. Fix `DateRequestValidator` to validate with `DateOnly.TryParse`, matching the parser actually used downstream.
+3. Stand up a Domain unit test project (`QuarterHelper`/`WeekHelper`) — still not done, still the top structural gap. Consider adding a small test project for `Vicgital.Grpc`'s interceptor pipeline too, now that it's shared infrastructure.
+4. Delete the dead `Kestrel:EndpointDefaults` config block and decide whether to keep or drop the plaintext `/` route.
+5. Swap `Grpc.Core` for `Grpc.Core.Api` in `Vicgital.Calendar.Service.Definition.csproj`.
+6. Add a `Dockerfile`, a `dotnet build`/`dotnet test` CI workflow, and a `global.json`.
