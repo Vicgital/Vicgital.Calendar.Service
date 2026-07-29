@@ -11,7 +11,7 @@
     <PackageVersion Include="Vicgital.Application.Shared" Version="1.0.0" />
     <PackageVersion Include="Vicgital.Core.Configuration" Version="1.0.0" />
     <PackageVersion Include="Vicgital.Core.Logging" Version="1.0.0" />
-    <PackageVersion Include="Vicgital.Data.Sql" Version="1.0.3" />
+    <PackageVersion Include="Vicgital.Data.Sql" Version="1.0.0" />
     <PackageVersion Include="Vicgital.Grpc" Version="1.0.0" />
   </ItemGroup>
 

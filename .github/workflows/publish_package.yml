@@ -9,10 +9,12 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    environment: Nuget_Publish
     permissions:
       packages: write
       contents: read
+    env:
+      GH_PACKAGE_USERNAME: ${{ secrets.GH_PACKAGE_USERNAME }}
+      GH_PACKAGE_TOKEN: ${{ secrets.GH_PACKAGE_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -24,4 +26,4 @@ jobs:
         run: dotnet pack src/Vicgital.Calendar.Service.Definition/Vicgital.Calendar.Service.Definition.csproj -c Release -o ./nupkg
 
       - name: Push to GitHub Packages
-        run: dotnet nuget push "./nupkg/*.nupkg" --source "https://nuget.pkg.github.com/vicgital/index.json" --api-key ${{ secrets.GIT_PACKAGES_PAT }} --skip-duplicate
+        run: dotnet nuget push "./nupkg/*.nupkg" --source "https://nuget.pkg.github.com/vicgital/index.json" --api-key ${{ secrets.GITHUB_TOKEN }} --skip-duplicate
