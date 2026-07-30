@@ -32,3 +32,4 @@ jobs:
         with:
           startupProject: ${{ env.definitionProject }}
           githubPublishPackageToken: ${{ secrets.GITHUB_TOKEN }}
+          skipCheckout: true
