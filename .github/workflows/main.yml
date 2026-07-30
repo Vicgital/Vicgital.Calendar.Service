@@ -24,4 +24,4 @@ jobs:
         uses: vicgital/cicd/actions/dotnetNugetPublish@main
         with:
           startupProject: ${{ env.definitionProject }}
-          githubPackageToken: ${{ secrets.GH_PACKAGE_TOKEN }}
+          githubPublishPackageToken: ${{ secrets.GITHUB_TOKEN }}
