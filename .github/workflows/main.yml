@@ -32,4 +32,5 @@ jobs:
         with:
           startupProject: ${{ env.definitionProject }}
           githubPublishPackageToken: ${{ secrets.GITHUB_TOKEN }}
+          skipDotNetSetup: true
           skipCheckout: true
