@@ -8,7 +8,9 @@ on:
     branches: [ "main" ]
 
 env:
-  startupProject: "src/Vicgital.Calendar.Service.Definition/Vicgital.Calendar.Service.Definition.csproj"
+  GH_PACKAGE_USERNAME: ${{ secrets.GH_PACKAGE_USERNAME }}
+  GH_PACKAGE_TOKEN: ${{ secrets.GH_PACKAGE_TOKEN }}
+  definitionProject: "src/Vicgital.Calendar.Service.Definition/Vicgital.Calendar.Service.Definition.csproj"
 
 jobs:
   publish:
@@ -21,7 +23,5 @@ jobs:
       - name: Publish Nuget Package
         uses: vicgital/cicd/actions/dotnetNugetPublish@main
         with:
-          startupProject: ${{ env.startupProject }}
-          githubPublishPackageToken: ${{ secrets.GITHUB_TOKEN }}
-          githubPackageUsername: ${{ secrets.GH_PACKAGE_USERNAME }}
+          startupProject: ${{ env.definitionProject }}
           githubPackageToken: ${{ secrets.GH_PACKAGE_TOKEN }}
