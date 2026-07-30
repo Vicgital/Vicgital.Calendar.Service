@@ -35,12 +35,25 @@ jobs:
           githubPublishPackageToken: ${{ secrets.GITHUB_TOKEN }}
           skipDotNetSetup: true
           skipCheckout: true
-             
-  
 
-  # docker-publish:
+  ## TODO: Add a test job here
+  # test:
   #   runs-on: ubuntu-latest
-  #   needs: [build] # TODO: add test
-  #   if: github.ref_name == 'develop' || github.ref_name == 'main'
-  #   outputs:
-  #     docker_image_tag: ${{ steps.dockerPush.outputs.docker_image_tag }}
+  #   steps:
+  #     ...
+  
+  
+  docker-publish:
+    runs-on: ubuntu-latest
+    needs: [build] # TODO: add test
+    if: github.ref_name == 'develop' || github.ref_name == 'main'
+    outputs:
+      docker_image_tag: ${{ steps.dockerPush.outputs.docker_image_tag }}
+    steps:
+      - name: Docker Build and Push
+        uses: vicgital/cicd/actions/dotnetDockerBuildAndPush@main
+        id: dockerPush
+        with:
+          startupProject: ${{ env.startupProject }}
+          artifactId: ${{ env.artifactId }}         
+          githubPublishImageToken: ${{ secrets.GITHUB_TOKEN }}
