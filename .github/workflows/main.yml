@@ -1,6 +1,5 @@
 name: Vicgital.Calendar.Service
 
-
 on:
   push:
     branches: [ "main" ]
@@ -11,6 +10,8 @@ env:
   GH_PACKAGE_USERNAME: ${{ secrets.GH_PACKAGE_USERNAME }}
   GH_PACKAGE_TOKEN: ${{ secrets.GH_PACKAGE_TOKEN }}
   definitionProject: "src/Vicgital.Calendar.Service.Definition/Vicgital.Calendar.Service.Definition.csproj"
+  startupProject: "src/Vicgital.Calendar.Service/Vicgital.Calendar.Service.csproj",
+  artifactId: "build-artifact"
 
 jobs:
   publish:
@@ -19,6 +20,12 @@ jobs:
       packages: write
       contents: read
     steps:
+
+      - name: Builds .NET Project
+        uses: vicgital/cicd/actions/dotnetBuild@main
+        with:
+          startupProject: ${{ env.startupProject }}
+          artifactId: ${{ env.artifactId }}
 
       - name: Publish Nuget Package
         uses: vicgital/cicd/actions/dotnetNugetPublish@main
