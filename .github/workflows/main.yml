@@ -10,6 +10,7 @@ env:
   GH_PACKAGE_USERNAME: ${{ secrets.GH_PACKAGE_USERNAME }}
   GH_PACKAGE_TOKEN: ${{ secrets.GH_PACKAGE_TOKEN }}
   definitionProject: "src/Vicgital.Calendar.Service.Definition/Vicgital.Calendar.Service.Definition.csproj"
+  dockerFilePath: src/Vicgital.Calendar.Service/Dockerfile
   startupProject: "src/Vicgital.Calendar.Service/Vicgital.Calendar.Service.csproj"
   artifactId: "build-artifact"
 
@@ -54,6 +55,6 @@ jobs:
         uses: vicgital/cicd/actions/dotnetDockerBuildAndPush@main
         id: dockerPush
         with:
-          startupProject: ${{ env.startupProject }}
+          dockerFilePath: ${{ env.dockerFilePath }}
           artifactId: ${{ env.artifactId }}         
           githubPublishImageToken: ${{ secrets.GITHUB_TOKEN }}
