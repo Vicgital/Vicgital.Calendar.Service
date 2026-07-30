@@ -27,24 +27,15 @@ jobs:
           startupProject: ${{ env.startupProject }}
           artifactId: ${{ env.artifactId }}
 
-  ## TODO: Add a test job here
-  # test:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     ...
-
-
-  nuget_publish:
-    runs-on: ubuntu-latest
-    needs: [build]
-    steps:
       - name: Publish Nuget Package
+        if: github.ref_name == 'develop' || github.ref_name == 'main'
         uses: vicgital/cicd/actions/dotnetNugetPublish@main
         with:
           startupProject: ${{ env.definitionProject }}
           githubPublishPackageToken: ${{ secrets.GITHUB_TOKEN }}
           skipDotNetSetup: true
           skipCheckout: true
+             
   
 
   # docker-publish:
