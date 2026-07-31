@@ -9,8 +9,8 @@ namespace Vicgital.Calendar.Application.Interfaces.Components
         Task<Result<Week>> GetWeekAsync(int id, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<Week>> GetWeeksByQuarterAsync(string quarterCode, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<Week>> GetWeeksByQuarterAsync(int quarterId, CancellationToken cancellationToken = default);
-        Task<IReadOnlyList<Week>> CreateWeeksByQuarter(string quarterCode, CancellationToken ct = default);
         Task<Result<Week>> GetWeekByDateAsync(DateOnly date, CancellationToken ct = default);
+        Task<Result<IReadOnlyList<Week>>> CreateWeeksByQuarter(string quarterCode, CancellationToken ct = default);
 
     }
 }

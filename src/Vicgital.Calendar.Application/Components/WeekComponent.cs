@@ -51,30 +51,22 @@ namespace Vicgital.Calendar.Application.Components
                 : WeekDTO.MapFromDTO(week);
         }
 
-        public async Task<IReadOnlyList<Week>> CreateWeeksByQuarter(string quarterCode, CancellationToken ct = default)
+        public async Task<Result<IReadOnlyList<Week>>> CreateWeeksByQuarter(string quarterCode, CancellationToken ct = default)
         {
-            var quarter = await _quarterRepository.GetQuarterAsync(quarterCode, ct) ?? throw new ArgumentException($"Quarter with code '{quarterCode}' not found.");
+            var quarter = await _quarterRepository.GetQuarterAsync(quarterCode, ct);
+            if (quarter == null)
+                return Error.NotFound("quarter_not_found", $"Quarter with code '{quarterCode}' not found.");
 
             var quarterWeeks = WeekHelper.BuildWeeksByQuarter(QuarterDTO.MapFromDTO(quarter));
 
-            var result = new List<Week>();
-            foreach (var week in quarterWeeks)
-            {
-                // Check if the week already exists in the repository
-                var existingWeek = await _repository.GetWeekAsync(week.Code, ct);
+            var existingCodes = await _repository.GetWeeksByCodesAsync(quarterWeeks.Select(w => w.Code), ct);
+            if (existingCodes.Count > 0)
+                return Error.Conflict("weeks_exist", $"Week(s) {string.Join(", ", existingCodes.Select(w => w.Code))} already exist in the database.");
 
-                if (existingWeek == null)
-                {
-                    var newWeek = await _repository.CreateWeekAsync(WeekDTO.MapToDTO(week), ct);
-                    result.Add(WeekDTO.MapFromDTO(newWeek));
-                }
-                else
-                    throw new InvalidOperationException($"Week {week.Code} already exists in the database.");
+            var created = await _repository.CreateWeeksAsync(quarterWeeks.Select(WeekDTO.MapToDTO), ct);
 
-            }
-
-            return result;
-
+            IReadOnlyList<Week> result = [.. created.Select(WeekDTO.MapFromDTO)];
+            return Result<IReadOnlyList<Week>>.Success(result);
         }
 
     }

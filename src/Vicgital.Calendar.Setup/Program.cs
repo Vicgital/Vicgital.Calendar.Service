@@ -16,15 +16,27 @@ var weekComponent = serviceProvider.GetRequiredService<IWeekComponent>();
 foreach (var year in yearsToCreate)
 {
     Console.WriteLine($"Creating quarters for year {year}");
-    var quarters = await quarterComponent.CreateQuartersByYear(year);
-    foreach (var quarter in quarters)
+    var quartersResult = await quarterComponent.CreateQuartersByYear(year);
+    if (!quartersResult.IsSuccess)
+    {
+        Console.WriteLine($"Failed to create quarters for year {year}: {quartersResult.FirstError!.Message}");
+        continue;
+    }
+
+    foreach (var quarter in quartersResult.Value)
     {
         Console.WriteLine("----------- Quarter -----------");
         Console.WriteLine($"Quarter {quarter.Code}: {quarter.StartDate} - {quarter.EndDate}");
         Console.WriteLine($"Creating weeks for quarter {quarter.Code}");
 
-        var weeks = await weekComponent.CreateWeeksByQuarter(quarter.Code);
-        foreach (var week in weeks)
+        var weeksResult = await weekComponent.CreateWeeksByQuarter(quarter.Code);
+        if (!weeksResult.IsSuccess)
+        {
+            Console.WriteLine($"Failed to create weeks for quarter {quarter.Code}: {weeksResult.FirstError!.Message}");
+            continue;
+        }
+
+        foreach (var week in weeksResult.Value)
         {
             Console.WriteLine($"Week {week.Code}: {week.StartDate} - {week.EndDate}");
         }

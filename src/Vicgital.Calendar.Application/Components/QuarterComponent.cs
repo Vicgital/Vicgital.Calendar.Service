@@ -44,27 +44,18 @@ namespace Vicgital.Calendar.Application.Components
             return [.. quarters.Select(QuarterDTO.MapFromDTO)];
         }
 
-        public async Task<IReadOnlyList<Quarter>> CreateQuartersByYear(int year, CancellationToken ct = default)
+        public async Task<Result<IReadOnlyList<Quarter>>> CreateQuartersByYear(int year, CancellationToken ct = default)
         {
             var yearQuarters = QuarterHelper.BuildQuartersByYear(year);
 
-            var result = new List<Quarter>();
-            foreach (var quarter in yearQuarters)
-            {
-                // check if the quarter already exists in the database
-                var existingQuarter = await _repository.GetQuarterAsync(quarter.Code, ct);
+            var existingCodes = await _repository.GetQuartersByCodesAsync(yearQuarters.Select(q => q.Code), ct);
+            if (existingCodes.Count > 0)
+                return Error.Conflict("quarters_exist", $"Quarter(s) {string.Join(", ", existingCodes.Select(q => q.Code))} already exist in the database.");
 
-                if (existingQuarter == null)
-                {
-                    var newQuarter = await _repository.CreateQuarterAsync(QuarterDTO.MapToDTO(quarter), ct);
+            var created = await _repository.CreateQuartersAsync(yearQuarters.Select(QuarterDTO.MapToDTO), ct);
 
-                    result.Add(QuarterDTO.MapFromDTO(newQuarter));
-                }
-                else
-                    throw new InvalidOperationException($"Quarter {quarter.Code} already exists in the database.");
-            }
-
-            return result;
+            IReadOnlyList<Quarter> result = [.. created.Select(QuarterDTO.MapFromDTO)];
+            return Result<IReadOnlyList<Quarter>>.Success(result);
         }
 
 

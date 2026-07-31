@@ -24,10 +24,11 @@ namespace Vicgital.Calendar.Application.Components.Caching
         public Task<IReadOnlyList<Quarter>> GetQuartersByYearAsync(int year, CancellationToken cancellationToken = default)
             => cache.GetOrCreateAsync(QuarterCacheKeys.ByYear(year), ct => inner.GetQuartersByYearAsync(year, ct), Options, cancellationToken);
 
-        public async Task<IReadOnlyList<Quarter>> CreateQuartersByYear(int year, CancellationToken ct = default)
+        public async Task<Result<IReadOnlyList<Quarter>>> CreateQuartersByYear(int year, CancellationToken ct = default)
         {
             var created = await inner.CreateQuartersByYear(year, ct);
-            cache.RemoveByPrefix(QuarterCacheKeys.Prefix);
+            if (created.IsSuccess)
+                cache.RemoveByPrefix(QuarterCacheKeys.Prefix);
             return created;
         }
     }

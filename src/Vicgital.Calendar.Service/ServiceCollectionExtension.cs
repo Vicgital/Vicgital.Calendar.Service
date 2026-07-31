@@ -42,6 +42,7 @@ namespace Vicgital.Calendar.Service
             services.AddScoped<IValidator<YearRequest>, YearRequestValidator>();
             services.AddScoped<IValidator<DateRequest>, DateRequestValidator>();
             services.AddScoped<IValidator<WeekRequest>, WeekRequestValidator>();
+            services.AddScoped<IValidator<CreateWeeksByQuarterRequest>, CreateWeeksByQuarterRequestValidator>();
         }
 
         static string GetSqlConnectionString()

@@ -1,5 +1,5 @@
 <Solution>
-  <Folder Name="/.deployment/">
+  <Folder Name="/.files/">
     <File Path=".github/workflows/main.yml" />
     <File Path="ARCHITECTURE_REVIEW.md" />
     <File Path="Directory.Build.props" />
