@@ -30,7 +30,12 @@ namespace Vicgital.Calendar.Infrastructure.Repositories
         public async Task<WeekDTO?> GetWeekAsync(string code, CancellationToken cancellationToken = default)
         {
             return await _dapper.QueryFirstOrDefaultAsync<WeekDTO?>(
-                "SELECT * FROM [dbo].[Week] WHERE [Code] = @Code",
+                @"SELECT 
+                     [Id]
+                    ,[QuarterId]
+                    ,[Code]
+                    ,[StartDate]
+                    ,[EndDate] FROM [dbo].[Week] WHERE [Code] = @Code",
                 new { Code = code }, cancellationToken: cancellationToken);
         }
 
@@ -39,21 +44,36 @@ namespace Vicgital.Calendar.Infrastructure.Repositories
             if (id <= 0) throw new ArgumentOutOfRangeException(nameof(id), "Id must be greater than zero.");
 
             return await _dapper.QueryFirstOrDefaultAsync<WeekDTO?>(
-                "SELECT * FROM [dbo].[Week] WHERE [Id] = @Id",
+                @"SELECT 
+                     [Id]
+                    ,[QuarterId]
+                    ,[Code]
+                    ,[StartDate]
+                    ,[EndDate] FROM [dbo].[Week] WHERE [Id] = @Id",
                 new { Id = id }, cancellationToken: cancellationToken);
         }
 
         public async Task<WeekDTO?> GetWeekByDateAsync(DateTime date, CancellationToken cancellationToken = default)
         {
             return await _dapper.QueryFirstOrDefaultAsync<WeekDTO?>(
-                "SELECT * FROM [dbo].[Week] WHERE [EndDate] >= @Date AND [StartDate] <= @Date", new { Date = date }, cancellationToken: cancellationToken);
+                @"SELECT 
+                     [Id]
+                    ,[QuarterId]
+                    ,[Code]
+                    ,[StartDate]
+                    ,[EndDate] WHERE [EndDate] >= @Date AND [StartDate] <= @Date", new { Date = date }, cancellationToken: cancellationToken);
 
         }
 
         public async Task<IReadOnlyList<WeekDTO>> GetWeeksByQuarterAsync(string quarterCode, CancellationToken cancellationToken = default)
         {
             return [.. (await _dapper.QueryAsync<WeekDTO>(
-                @"SELECT [W].* FROM [dbo].[Week] AS [W]
+                @"SELECT 
+                     [W].[Id]
+                    ,[W].[QuarterId]
+                    ,[W].[Code]
+                    ,[W].[StartDate]
+                    ,[W].[EndDate] FROM [dbo].[Week] AS [W]
                   INNER JOIN [dbo].[Quarter] AS [Q] ON [W].[QuarterId] = [Q].[Id]
                   WHERE [Q].[Code] = @QuarterCode
                   ORDER BY [W].[StartDate]",
@@ -63,7 +83,12 @@ namespace Vicgital.Calendar.Infrastructure.Repositories
         public async Task<IReadOnlyList<WeekDTO>> GetWeeksByQuarterAsync(int quarterId, CancellationToken cancellationToken = default)
         {
             return [.. (await _dapper.QueryAsync<WeekDTO>(
-                @"SELECT [W].* FROM [dbo].[Week] AS [W]
+                @"SELECT 
+                     [W].[Id]
+                    ,[W].[QuarterId]
+                    ,[W].[Code]
+                    ,[W].[StartDate]
+                    ,[W].[EndDate] FROM [dbo].[Week] AS [W]
                   INNER JOIN [dbo].[Quarter] AS [Q] ON [W].[QuarterId] = [Q].[Id]
                   WHERE [Q].[Id] = @QuarterId
                   ORDER BY [W].[StartDate]",

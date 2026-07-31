@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <PackageReference Include="Vicgital.Application.Shared" />
+    <PackageReference Include="Vicgital.Core.Caching.InMemory" />
   </ItemGroup>  
 
   <ItemGroup>

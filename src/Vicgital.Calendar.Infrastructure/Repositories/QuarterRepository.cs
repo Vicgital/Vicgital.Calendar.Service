@@ -33,28 +33,49 @@ namespace Vicgital.Calendar.Infrastructure.Repositories
         {
 
             var quarter = await _dapper.QuerySingleOrDefaultAsync<QuarterDTO>(
-                @"SELECT * FROM [dbo].[Quarter] WHERE [Code] = @Code", new { Code = code }, cancellationToken: cancellationToken);
+                @"SELECT 
+                     [Id]
+                    ,[Code]
+                    ,[StartDate]
+                    ,[EndDate] 
+                    FROM [dbo].[Quarter] 
+                    WHERE [Code] = @Code", new { Code = code }, cancellationToken: cancellationToken);
             return quarter;
         }
 
         public async Task<QuarterDTO?> GetQuarterAsync(int id, CancellationToken cancellationToken = default)
         {
             var quarter = await _dapper.QuerySingleOrDefaultAsync<QuarterDTO>(
-                @"SELECT * FROM [dbo].[Quarter] WHERE [Id] = @Id", new { Id = id }, cancellationToken: cancellationToken);
+                @"SELECT 
+                     [Id]
+                    ,[Code]
+                    ,[StartDate]
+                    ,[EndDate] 
+                    FROM [dbo].[Quarter] WHERE [Id] = @Id", new { Id = id }, cancellationToken: cancellationToken);
             return quarter;
         }
 
         public async Task<QuarterDTO?> GetQuarterByDate(DateTime date, CancellationToken cancellationToken = default)
         {
             var quarter = await _dapper.QuerySingleOrDefaultAsync<QuarterDTO>(
-                @"SELECT * FROM [Quarter] WHERE [EndDate] >= @Date AND [StartDate] <= @Date", new { Date = date }, cancellationToken: cancellationToken);
+                    @"SELECT 
+                     [Id]
+                    ,[Code]
+                    ,[StartDate]
+                    ,[EndDate] 
+                    FROM [dbo].[Quarter] WHERE [EndDate] >= @Date AND [StartDate] <= @Date", new { Date = date }, cancellationToken: cancellationToken);
             return quarter;
         }
 
         public async Task<IReadOnlyList<QuarterDTO>> GetQuartersByYearAsync(int year, CancellationToken cancellationToken = default)
         {
             var quarters = await _dapper.QueryAsync<QuarterDTO>(
-                @"SELECT * FROM [dbo].[Quarter] WHERE YEAR([StartDate]) = @Year", new { Year = year }, cancellationToken: cancellationToken);
+                    @"SELECT 
+                     [Id]
+                    ,[Code]
+                    ,[StartDate]
+                    ,[EndDate] 
+                    FROM [dbo].[Quarter] WHERE YEAR([StartDate]) = @Year", new { Year = year }, cancellationToken: cancellationToken);
 
             return [.. quarters];
         }

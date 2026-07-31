@@ -21,8 +21,8 @@ namespace Vicgital.Calendar.Service.Implementation
         public async override Task<QuarterModel> GetQuarter(QuarterRequest request, ServerCallContext context)
         {
             var result = request.Id > 0
-                ? await _quarterComponent.GetQuarterAsync(request.Id)
-                : await _quarterComponent.GetQuarterAsync(request.Code);
+                ? await _quarterComponent.GetQuarterAsync(request.Id, context.CancellationToken)
+                : await _quarterComponent.GetQuarterAsync(request.Code, context.CancellationToken);
 
             return result.Unwrap().ToProto();
         }
@@ -31,7 +31,7 @@ namespace Vicgital.Calendar.Service.Implementation
         {
             QuartersReply reply = new();
 
-            var quarters = await _quarterComponent.GetQuartersByYearAsync(request.Year);
+            var quarters = await _quarterComponent.GetQuartersByYearAsync(request.Year, context.CancellationToken);
             reply.Quarters.AddRange(quarters.Select(q => q.ToProto()));
 
             return reply;
@@ -39,7 +39,7 @@ namespace Vicgital.Calendar.Service.Implementation
 
         public async override Task<QuarterModel> GetQuarterByDate(DateRequest request, ServerCallContext context)
         {
-            var result = await _quarterComponent.GetQuarterByDateAsync(DateOnly.Parse(request.Date));
+            var result = await _quarterComponent.GetQuarterByDateAsync(DateOnly.Parse(request.Date), context.CancellationToken);
             return result.Unwrap().ToProto();
         }
 
@@ -50,8 +50,8 @@ namespace Vicgital.Calendar.Service.Implementation
         public async override Task<WeekModel> GetWeek(WeekRequest request, ServerCallContext context)
         {
             var result = request.Id > 0
-                ? await _weekComponent.GetWeekAsync(request.Id)
-                : await _weekComponent.GetWeekAsync(request.Code);
+                ? await _weekComponent.GetWeekAsync(request.Id, context.CancellationToken)
+                : await _weekComponent.GetWeekAsync(request.Code, context.CancellationToken);
 
             return result.Unwrap().ToProto();
         }
@@ -60,8 +60,8 @@ namespace Vicgital.Calendar.Service.Implementation
         {
             WeeksReply reply = new();
             IReadOnlyList<Week> weeks = request.Id > 0
-                ? await _weekComponent.GetWeeksByQuarterAsync(request.Id)
-                : await _weekComponent.GetWeeksByQuarterAsync(request.Code);
+                ? await _weekComponent.GetWeeksByQuarterAsync(request.Id, context.CancellationToken)
+                : await _weekComponent.GetWeeksByQuarterAsync(request.Code, context.CancellationToken);
 
             reply.Weeks.AddRange(weeks.Select(w => w.ToProto()));
 
@@ -70,7 +70,7 @@ namespace Vicgital.Calendar.Service.Implementation
 
         public async override Task<WeekModel> GetWeekByDate(DateRequest request, ServerCallContext context)
         {
-            var result = await _weekComponent.GetWeekByDateAsync(DateOnly.Parse(request.Date));
+            var result = await _weekComponent.GetWeekByDateAsync(DateOnly.Parse(request.Date), context.CancellationToken);
             return result.Unwrap().ToProto();
         }
 

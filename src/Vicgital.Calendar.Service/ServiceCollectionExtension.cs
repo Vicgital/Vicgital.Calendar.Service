@@ -1,10 +1,13 @@
 ﻿using FluentValidation;
 using Vicgital.Calendar.Application.Components;
+using Vicgital.Calendar.Application.Components.Caching;
 using Vicgital.Calendar.Application.Interfaces.Components;
 using Vicgital.Calendar.Application.Interfaces.Repositories;
 using Vicgital.Calendar.Infrastructure.Repositories;
 using Vicgital.Calendar.Service.Definition;
 using Vicgital.Calendar.Service.Validators;
+using Vicgital.Core.Caching.Abstractions;
+using Vicgital.Core.Caching.InMemory.Extensions;
 using Vicgital.Data.Sql.Extensions;
 using Vicgital.Data.Sql.Helpers;
 
@@ -22,9 +25,16 @@ namespace Vicgital.Calendar.Service
             services.AddScoped<IWeekRepository, WeekRepository>();
             services.AddScoped<IFortnightRepository, FortnightRepository>();
 
-            // Add Components
-            services.AddScoped<IQuarterComponent, QuarterComponent>();
-            services.AddScoped<IWeekComponent, WeekComponent>();
+            // Add Caching
+            services.AddVicgitalInMemoryCaching();
+
+            // Add Components (decorated with a caching layer, since quarters/weeks are effectively immutable reference data)
+            services.AddScoped<QuarterComponent>();
+            services.AddScoped<IQuarterComponent>(sp => new CachedQuarterComponent(sp.GetRequiredService<QuarterComponent>(), sp.GetRequiredService<ICacheService>()));
+
+            services.AddScoped<WeekComponent>();
+            services.AddScoped<IWeekComponent>(sp => new CachedWeekComponent(sp.GetRequiredService<WeekComponent>(), sp.GetRequiredService<ICacheService>()));
+
             services.AddScoped<IFortnightComponent, FortnightComponent>();
 
             // Add Validators
