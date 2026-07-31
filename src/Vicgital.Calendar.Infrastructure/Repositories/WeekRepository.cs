@@ -14,7 +14,7 @@ namespace Vicgital.Calendar.Infrastructure.Repositories
                 @"INSERT INTO [dbo].[Week] (
                     [QuarterId], 
                     [Code], 
-                    [StartDate], 
+                    [StartDate],
                     [EndDate])
                 OUTPUT INSERTED.*
                 VALUES (
@@ -41,8 +41,6 @@ namespace Vicgital.Calendar.Infrastructure.Repositories
 
         public async Task<WeekDTO?> GetWeekAsync(int id, CancellationToken cancellationToken = default)
         {
-            if (id <= 0) throw new ArgumentOutOfRangeException(nameof(id), "Id must be greater than zero.");
-
             return await _dapper.QueryFirstOrDefaultAsync<WeekDTO?>(
                 @"SELECT 
                      [Id]
@@ -61,7 +59,7 @@ namespace Vicgital.Calendar.Infrastructure.Repositories
                     ,[QuarterId]
                     ,[Code]
                     ,[StartDate]
-                    ,[EndDate] WHERE [EndDate] >= @Date AND [StartDate] <= @Date", new { Date = date }, cancellationToken: cancellationToken);
+                    ,[EndDate] FROM [dbo].[Week] WHERE [EndDate] >= @Date AND [StartDate] <= @Date", new { Date = date }, cancellationToken: cancellationToken);
 
         }
 

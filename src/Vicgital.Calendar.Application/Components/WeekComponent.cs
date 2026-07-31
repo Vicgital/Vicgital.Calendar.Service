@@ -45,7 +45,7 @@ namespace Vicgital.Calendar.Application.Components
 
         public async Task<Result<Week>> GetWeekByDateAsync(DateOnly date, CancellationToken ct = default)
         {
-            var week = await _repository.GetWeekByDateAsync(date.ToDateTime(TimeOnly.MinValue), ct);
+            var week = await _repository.GetWeekByDateAsync(date.ToDateTime(new TimeOnly()), ct);
             return week == null
                 ? Error.NotFound("week_not_found", $"Week for date {date} not found.")
                 : WeekDTO.MapFromDTO(week);
