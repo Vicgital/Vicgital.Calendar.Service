@@ -1,8 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+	
 
-	<ItemGroup>
-		<PackageReference Include="Vicgital.Data.Sql" />
-	</ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Vicgital.Data.Sql.Dapper" />
+  </ItemGroup>
 	
 
   <ItemGroup>

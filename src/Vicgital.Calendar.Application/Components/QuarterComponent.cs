@@ -32,7 +32,7 @@ namespace Vicgital.Calendar.Application.Components
 
         public async Task<Result<Quarter>> GetQuarterByDateAsync(DateOnly date, CancellationToken ct = default)
         {
-            var quarter = await _repository.GetQuarterByDate(date.ToDateTime(TimeOnly.MinValue), ct);
+            var quarter = await _repository.GetQuarterByDate(date.ToDateTime(new TimeOnly()), ct);
             return quarter == null
                 ? Error.NotFound("quarter_not_found", $"Quarter for date {date} not found.")
                 : QuarterDTO.MapFromDTO(quarter);

@@ -257,3 +257,104 @@ These weren't touched in this pass and the Round 1 write-up still applies as-is:
 4. Delete the dead `Kestrel:EndpointDefaults` config block and decide whether to keep or drop the plaintext `/` route.
 5. Swap `Grpc.Core` for `Grpc.Core.Api` in `Vicgital.Calendar.Service.Definition.csproj`.
 6. Add a `Dockerfile`, a `dotnet build`/`dotnet test` CI workflow, and a `global.json`.
+
+---
+
+## Round 3 Review — 2026-07-31
+
+*Scope: full solution at commit `d240de7` ("Service refactor"). This round focuses on what changed since Round 2, since most of Round 1/2 still applies unchanged where noted.*
+
+### What Actually Got Fixed
+
+- **The `NotFoundException` → `Internal` regression is gone** — but fixed differently than Round 2 suggested, and arguably better. Rather than adding an exception-mapping interceptor, the components now return `Result<Quarter>`/`Result<Week>` (`Error.NotFound(...)` on a miss) instead of throwing, and `Helpers/ResultExtensions.Unwrap()` maps `ErrorType.NotFound → StatusCode.NotFound` directly in `CalendarService`, before `Vicgital.Grpc`'s generic interceptor ever sees it. This sidesteps the whole "should the shared gRPC package know about this service's exception taxonomy" tension Round 2 flagged — worth keeping as the pattern going forward instead of building the adapter interceptor that was proposed.
+- **`Grpc.Core` → `Grpc.Core.Api`** in `Vicgital.Calendar.Service.Definition.csproj` — done, no more native deps forced on consumers of the contract package.
+- **Dead `Kestrel:EndpointDefaults` config removed** — `appsettings.json` is now just `{}`.
+- **The plaintext `/` route is gone** from `Program.cs` — the gRPC health check (`MapVicgitalGrpcEndpoints()`) is the only liveness signal now, which is the correct one for a gRPC-only service.
+- **Dead proto messages removed** — `QuarterCodeRequest`/`EmptyRequest` are gone from `calendar.proto`.
+- **`Directory.Build.props` and `Directory.Packages.props` (CPM) added** — the repeated `TargetFramework`/`Nullable`/`ImplicitUsings` block and the package-version drift Round 1/2 flagged are both resolved.
+- **`SELECT *` replaced with explicit columns** in `QuarterRepository`/`WeekRepository` — but see the new bug below, this refactor wasn't clean.
+- **`context.CancellationToken` now forwarded** on every `CalendarService` call site.
+- **A caching layer was added and immediately promoted to a shared package** (`Vicgital.Core.Caching.Abstractions` / `Vicgital.Core.Caching.InMemory`), following the same "pull cross-cutting concerns into a shared package" pattern that worked well for `Vicgital.Grpc`. `CachedQuarterComponent`/`CachedWeekComponent` decorate the real components behind the existing `IQuarterComponent`/`IWeekComponent` interfaces (registered via factory delegates in `ServiceCollectionExtension`), with prefix-based invalidation on the rare `Create*` calls. This is the right shape and a good structural precedent for future services.
+- **Dockerfile + real CI added** — multi-stage-free single-stage `Dockerfile` on `aspnet:10.0-noble-chiseled`, and `.github/workflows/main.yml` now builds, publishes the contract package, and builds/pushes the Docker image via the shared `vicgital/cicd` composite actions.
+
+### 🔴 New Bug: `WeekRepository.GetWeekByDateAsync` is missing its `FROM` clause — `GetWeekByDate` is broken for every caller
+
+The `SELECT *` cleanup dropped the `FROM` clause on this one query:
+
+```csharp
+// WeekRepository.cs
+public async Task<WeekDTO?> GetWeekByDateAsync(DateTime date, CancellationToken cancellationToken = default)
+{
+    return await _dapper.QueryFirstOrDefaultAsync<WeekDTO?>(
+        @"SELECT 
+             [Id]
+            ,[QuarterId]
+            ,[Code]
+            ,[StartDate]
+            ,[EndDate] WHERE [EndDate] >= @Date AND [StartDate] <= @Date", new { Date = date }, cancellationToken: cancellationToken);
+}
+```
+
+There's no `FROM [dbo].[Week]` — compare with the sibling `QuarterRepository.GetQuarterByDate`, which correctly kept its `FROM [dbo].[Quarter] WHERE ...`. This compiles fine (it's just a string) but every call to the `GetWeekByDate` RPC will fail at the database with a SQL syntax/invalid-column error. This isn't an edge case or an admin-only path — it's one of the six live, client-facing RPCs, and it's been broken since the most recent commit (`d240de7`). This is the highest-priority fix in this round.
+
+**Fix:**
+```csharp
+@"SELECT 
+     [Id]
+    ,[QuarterId]
+    ,[Code]
+    ,[StartDate]
+    ,[EndDate]
+    FROM [dbo].[Week] 
+    WHERE [EndDate] >= @Date AND [StartDate] <= @Date"
+```
+This is exactly the kind of regression a thin `WeekRepository` integration test (or even a smoke test hitting a real/local SQL instance) would have caught immediately — see the testing note below, which is now more urgent, not less.
+
+### 🟡 Minor: leftover unused `PackageVersion` entries
+
+`Directory.Packages.props` still declares `Microsoft.Extensions.Caching.Memory` and `Microsoft.Extensions.DependencyInjection.Abstractions` — left over from when the caching layer briefly lived in this repo as a local project. Now that it's the external `Vicgital.Core.Caching.InMemory` package, nothing in the solution references either package directly anymore. Safe to delete both lines.
+
+### 🟡 Minor: inconsistent defensive check in `WeekRepository`
+
+`WeekRepository.GetWeekAsync(int id)` throws `ArgumentOutOfRangeException` if `id <= 0`; no other repository method (`GetWeekAsync(string code)`, either `QuarterRepository` overload) has an equivalent guard, and `CalendarService` only ever calls the int overload when `request.Id > 0`, so this is dead code today. Not a bug, just an inconsistency — either drop it or apply the same guard pattern consistently across repositories.
+
+### Everything Else From Round 1/2 — Still Open, Verified Unchanged
+
+- ~~`DateRequestValidator` still validates with `DateTime.TryParse` while `CalendarService.GetQuarterByDate`/`GetWeekByDate` parse with the stricter `DateOnly.Parse`.~~ *(Fixed same day, see addendum below — the mismatch is gone because dates are no longer strings at all.)*
+- **No test project anywhere** — `test/` is still an empty placeholder in the `.slnx`. This is now the most consequential gap in the repo: the `WeekRepository` bug above is precisely the failure mode a repository/integration test suite exists to catch, and it shipped straight past code review into what would've been production.
+- **Fortnight is still a complete stub** (`FortnightComponent`, `IFortnightComponent`, `IFortnightRepository`, `FortnightRepository`, `Fortnight` entity are all empty; `CalendarService`'s three Fortnight RPCs still just `// TODO` + fall through to `base.*` → `Unimplemented`). No `FortnightHelper` exists yet either. Tracked correctly as a deliberate "not yet designed" gap, not a bug.
+- **DTO/Domain duplication remains** — `QuarterDTO`/`WeekDTO`/`FortnightDTO` still mirror their Domain entities exactly except `DateTime` vs `DateOnly`, and `MapFromDTO`/`MapToDTO` naming still reads backwards.
+- **`TimeOnly.MinValue` (Components) vs `new TimeOnly()` (DTOs)** — same value, still two spellings.
+- **`ServiceCollectionExtension.cs` is still byte-for-byte duplicated** between `Vicgital.Calendar.Service` and `Vicgital.Calendar.Setup`, including `GetSqlConnectionString()`.
+- **`QuarterComponent.CreateQuartersByYear`/`WeekComponent.CreateWeeksByQuarter` still loop `SELECT` + `INSERT` per item with no transaction** — already tracked in `TECH_DEBT.md` as the one remaining Performance item.
+- **No `RuntimeIdentifier` anywhere** — already tracked in `TECH_DEBT.md` as the one remaining Docker-image-size item; still unaddressed.
+- **No `global.json`.**
+- ~~`calendar.proto` still has no `oneof` for the recurring Id-or-Code pattern, and dates are still culture-sensitive `MM/dd/yyyy` strings.~~ *(Fixed same day, see addendum below.)*
+- **CI still has no test job** — `.github/workflows/main.yml` literally has `## TODO: Add a test job here` above the `docker-publish` job. Given the bug above, this is the gap that would have actually caught it.
+- No `FluentValidation` validator exists yet for `FortnightRequest`/`MonthRequest` — harmless while those RPCs are unimplemented, but worth remembering to add (`Id > 0 || Code`, `1 <= Month <= 12`) once Fortnight gets built out, following the existing `QuarterRequestValidator`/`WeekRequestValidator`/`YearRequestValidator` pattern.
+
+### Updated Punch List
+
+1. **Fix the missing `FROM [dbo].[Week]` clause in `WeekRepository.GetWeekByDateAsync`** — live bug, breaks a real RPC, highest priority.
+2. ~~Fix `DateRequestValidator` to validate with `DateOnly.TryParse`, matching the parser actually used downstream.~~ *(Done — see addendum.)*
+3. Stand up a test project — at minimum `QuarterHelper`/`WeekHelper` unit tests and a `WeekRepository`/`QuarterRepository` integration test (Testcontainers or a local SQL instance) that would catch exactly the class of bug found this round. Wire it into the CI workflow's empty test-job placeholder.
+4. ~~Delete the two unused `PackageVersion` entries (`Microsoft.Extensions.Caching.Memory`, `Microsoft.Extensions.DependencyInjection.Abstractions`) from `Directory.Packages.props`.~~ *(Done.)*
+5. ~~Set `RuntimeIdentifier`/CI publish flags (tracked in `TECH_DEBT.md`) and add `global.json`.~~ *(Done — see addendum.)*
+6. When Fortnight design work starts: define the business rule in `Domain` (like `QuarterHelper`/`WeekHelper`), then fill in the repository/component/DTO layers and add the matching request validators.
+
+---
+
+### Addendum — same day, 2026-07-31: `oneof` and `google.type.Date` adopted
+
+Two of the Round 3 "still open" items were addressed immediately after the review:
+
+- **`calendar.proto` now uses `oneof identifier { int32 id = 1; string code = 2; }`** on `QuarterRequest`, `WeekRequest`, and `FortnightRequest` — field numbers unchanged, so this is wire-compatible with the old two-independent-fields shape. `CalendarService` and the request validators now branch on `request.IdentifierCase` instead of `Id > 0`.
+- **Dates are now `google.type.Date` instead of `MM/dd/yyyy` strings**, via the `Google.Api.CommonProtos` package (`IncludeGoogleApiCommonProtos=true` in `Vicgital.Calendar.Service.Definition.csproj`, imported as `google/type/date.proto`). This is a genuine wire-format break, so `Vicgital.Calendar.Service.Definition`'s `Version` was bumped `1.0.0 → 2.0.0`. `Helpers/Mapper.cs` gained `DateOnly.ToProtoDate()`/`Date.ToDateOnly()` extensions used at every mapping site; the Domain/Application layers are untouched since they still work in `DateOnly` throughout — only the presentation-layer (de)serialization changed.
+- **This incidentally fixed Round 3 punch-list item #2** (`DateRequestValidator` vs. `DateOnly.Parse` mismatch): there's no string parsing left on this path at all. `DateRequestValidator` now validates the `Date` message's `Year`/`Month`/`Day` form a real calendar date directly (`BeAValidDate`), so "passed validation" and "will work downstream" can no longer diverge.
+
+Not addressed by this change: the `WeekRepository.GetWeekByDateAsync` missing-`FROM`-clause bug (punch-list item #1) is independent of the wire format and still needs fixing.
+
+### Addendum 2 — same day, 2026-07-31: `RuntimeIdentifier` and `global.json`
+
+- **`global.json`** added, pinned to the locally-installed `10.0.302` with `rollForward: latestFeature` — strict enough to catch an accidental major/minor SDK drift, loose enough that CI's `dotnetVersion: '10.0.x'` resolution (which may land on a different feature band) still satisfies it.
+- **`RuntimeIdentifier`**: turns out `vicgital/cicd`'s `dotnetBuild` action runs a bare `dotnet publish ... --no-restore` — no `-r`/`--self-contained` flags, and no inputs to add them — so passing this through CI wasn't an option without editing that separate repo. Set directly in `Vicgital.Calendar.Service.csproj` instead, guarded by `Condition="'$(CI)' == 'true'"` (GitHub Actions sets `CI=true` on every runner) so local `dotnet build`/`dotnet run` on Windows stay RID-agnostic — an unconditional `<RuntimeIdentifier>linux-x64</RuntimeIdentifier>` would have broken `Microsoft.Data.SqlClient`'s native SNI resolution locally. Verified both directions: local build unaffected, and `CI=true dotnet publish` produces no `runtimes/` folder at all — the linux-x64 native SNI assets flatten straight into the output root instead of shipping all four platforms.

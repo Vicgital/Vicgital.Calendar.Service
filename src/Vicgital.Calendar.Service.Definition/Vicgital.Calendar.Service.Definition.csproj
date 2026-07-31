@@ -3,14 +3,16 @@
 	<PropertyGroup>
 		<AssemblyName>Vicgital.Calendar.Service.Definition</AssemblyName>
 		<PackageId>Vicgital.Calendar.Service.Definition</PackageId>
-		<Version>1.0.0</Version>
+		<Version>2.0.0</Version>
 		<Authors>Vicgital</Authors>
 		<RepositoryUrl>https://github.com/vicgital/Vicgital.Calendar.Service</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageDescription>GRPC Service Definition for Calendar Service</PackageDescription>
+		<IncludeGoogleApiCommonProtos>true</IncludeGoogleApiCommonProtos>
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Google.Api.CommonProtos" />
 		<PackageReference Include="Google.Protobuf" />
 		<PackageReference Include="Grpc.Core.Api" />
 		<PackageReference Include="Grpc.Tools">

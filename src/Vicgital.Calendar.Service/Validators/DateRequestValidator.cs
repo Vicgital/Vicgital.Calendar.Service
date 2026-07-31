@@ -1,4 +1,5 @@
 using FluentValidation;
+using Google.Type;
 using Vicgital.Calendar.Service.Definition;
 
 namespace Vicgital.Calendar.Service.Validators
@@ -8,8 +9,15 @@ namespace Vicgital.Calendar.Service.Validators
         public DateRequestValidator()
         {
             RuleFor(request => request.Date)
-                .Must(date => DateTime.TryParse(date, out _))
-                .WithMessage("Invalid date format provided.");
+                .Must(BeAValidDate)
+                .WithMessage("A valid date must be provided.");
         }
+
+        private static bool BeAValidDate(Date? date) =>
+            date is not null
+            && date.Year is >= 1 and <= 9999
+            && date.Month is >= 1 and <= 12
+            && date.Day >= 1
+            && date.Day <= System.DateTime.DaysInMonth(date.Year, date.Month);
     }
 }

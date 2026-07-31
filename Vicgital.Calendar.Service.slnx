@@ -2,7 +2,10 @@
   <Folder Name="/.deployment/">
     <File Path=".github/workflows/main.yml" />
     <File Path="ARCHITECTURE_REVIEW.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
     <File Path="nuget.config" />
+    <File Path="TECH_DEBT.md" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/Vicgital.Calendar.Application/Vicgital.Calendar.Application.csproj" />

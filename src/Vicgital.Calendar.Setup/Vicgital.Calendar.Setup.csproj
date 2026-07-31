@@ -7,11 +7,7 @@
 	<ItemGroup>
 		<PackageReference Include="Vicgital.Core.Configuration" />
 		<PackageReference Include="Vicgital.Core.Logging" />		
-	</ItemGroup>
-
-	<ItemGroup>
-		<None Remove="appsettings.json" />
-	</ItemGroup>
+	</ItemGroup>	
 
 	<ItemGroup>
 		<Content Include="appsettings.json">

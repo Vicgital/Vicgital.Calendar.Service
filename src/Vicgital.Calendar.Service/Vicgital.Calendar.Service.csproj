@@ -1,5 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
+  <!-- Scoped to CI (GitHub Actions sets CI=true) rather than set unconditionally: the CI publish
+       step (vicgital/cicd's dotnetBuild action) passes no runtime or self contained flags, and has
+       no inputs for them, so the RID has to live here. Setting it unconditionally would also apply
+       to local `dotnet run`/F5 debugging on Windows, breaking Microsoft.Data.SqlClient's native SNI
+       resolution. -->
+  <PropertyGroup Condition="'$(CI)' == 'true'">
+    <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Vicgital.Grpc" />
   </ItemGroup>
