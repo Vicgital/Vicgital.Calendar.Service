@@ -8,7 +8,12 @@ namespace Vicgital.Calendar.Service.Validators
         public WeekRequestValidator()
         {
             RuleFor(request => request)
-                .Must(request => request.Id > 0 || !string.IsNullOrWhiteSpace(request.Code))
+                .Must(request => request.IdentifierCase switch
+                {
+                    WeekRequest.IdentifierOneofCase.Id => request.Id > 0,
+                    WeekRequest.IdentifierOneofCase.Code => !string.IsNullOrWhiteSpace(request.Code),
+                    _ => false
+                })
                 .WithMessage("Either Week ID or Code must be provided.");
         }
     }

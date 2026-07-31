@@ -1,8 +1,9 @@
 syntax = "proto3";
 option csharp_namespace = "Vicgital.Calendar.Service.Definition";
 
+import "google/type/date.proto";
 
-service Calendar {	
+service Calendar {
 
 	rpc GetQuarter (QuarterRequest) returns (QuarterModel);
 	rpc GetQuartersByYear (YearRequest) returns (QuartersReply);
@@ -20,12 +21,14 @@ service Calendar {
 }
 
 message DateRequest {
-	string date = 1;
+	google.type.Date date = 1;
 }
 
 message WeekRequest {
-	int32 id = 1;
-	string code = 2;
+	oneof identifier {
+		int32 id = 1;
+		string code = 2;
+	}
 }
 
 message WeeksReply {
@@ -35,8 +38,8 @@ message WeeksReply {
 message WeekModel {
 	int32 id = 1;
 	string code = 2;
-	string startDate = 3;
-	string endDate = 4;
+	google.type.Date startDate = 3;
+	google.type.Date endDate = 4;
 }
 
 message YearRequest {
@@ -44,8 +47,10 @@ message YearRequest {
 }
 
 message QuarterRequest {
-	int32 id = 1;
-	string code = 2;
+	oneof identifier {
+		int32 id = 1;
+		string code = 2;
+	}
 }
 
 message QuartersReply {
@@ -55,16 +60,18 @@ message QuartersReply {
 message QuarterModel {
 	int32 id = 1;
 	string code = 2;
-	string startDate = 3;
-	string endDate = 4;
+	google.type.Date startDate = 3;
+	google.type.Date endDate = 4;
 }
 
 
 
 
 message FortnightRequest {
-	int32 id = 1;
-	string code = 2;
+	oneof identifier {
+		int32 id = 1;
+		string code = 2;
+	}
 }
 
 message MonthRequest {
@@ -79,6 +86,6 @@ message FortnightsReply {
 message FortnightModel {
 	int32 id = 1;
 	string code = 2;
-	string startDate = 3;
-	string endDate = 4;
+	google.type.Date startDate = 3;
+	google.type.Date endDate = 4;
 }

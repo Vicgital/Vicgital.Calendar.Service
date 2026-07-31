@@ -4,10 +4,9 @@ Tracked improvements that are safe to defer but shouldn't be forgotten. Each ite
 
 ## Docker image size
 
-- [ ] **No `RuntimeIdentifier` is set anywhere in the repo, so publish output is portable/RID-agnostic.**
+- [x] **No `RuntimeIdentifier` is set anywhere in the repo, so publish output is portable/RID-agnostic.**
   `Microsoft.Data.SqlClient`'s native SNI binaries get published for all four platforms at once (`runtimes/win-x86`, `runtimes/win-x64`, `runtimes/win-arm64`, `runtimes/unix`), even though the service only ever runs in a Linux container.
-  **Fix:** set `<RuntimeIdentifier>linux-x64</RuntimeIdentifier>` (framework-dependent, not self-contained) on the service project, or pass `-r linux-x64 --self-contained false` in the CI publish step.
-  Effort: low. Risk: low (verify the `dotnetBuild`/`dotnetDockerBuildAndPush` composite actions in `vicgital/cicd` don't assume a portable/RID-less publish).
+  **Fix:** `vicgital/cicd`'s `dotnetBuild` action runs `dotnet publish ... --no-restore` with no `-r`/`--self-contained` flags or inputs for them, so the RID couldn't be passed through CI — it had to live in the project file. Set `<RuntimeIdentifier>linux-x64</RuntimeIdentifier>` + `<SelfContained>false</SelfContained>` in `Vicgital.Calendar.Service.csproj`, scoped to `Condition="'$(CI)' == 'true'"` (GitHub Actions sets `CI=true`) so local `dotnet build`/`dotnet run` on Windows stay RID-agnostic — an unconditional RID would've broken `Microsoft.Data.SqlClient`'s native SNI resolution during local dev. Verified: local build unaffected, `CI=true dotnet publish` produces no `runtimes/` folder at all (linux-x64 native assets flatten into the output root).
 
 - [x] **No `SatelliteResourceLanguages` is set.**
   Every localized dependency (`Microsoft.Data.SqlClient`, MSAL, Azure Identity, etc.) ships resource DLLs for ~13 cultures (`de`, `cs`, `es`, `fr`, `ja`, `ko`, `tr`, `zh-Hant`, `pt-BR`, `ru`, `zh-Hans`, `pl`, `it`), confirmed present in the build output.
