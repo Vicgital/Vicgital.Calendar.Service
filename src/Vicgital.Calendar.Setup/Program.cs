@@ -1,54 +1,58 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Vicgital.Calendar.Application.Interfaces.Components;
-using Vicgital.Calendar.Setup;
+using Google.Type;
+using Grpc.Core;
+using Grpc.Net.Client;
+using Vicgital.Calendar.Service.Definition;
 using Vicgital.Core.Configuration;
 
+AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
-var yearsToCreate = new List<int> { 2025, 2026, 2027, 2028, 2029, 2030 };
+var config = ConfigurationBuilder.BuildConfiguration();
+var calendarServiceUrl = config["CalendarService:Url"] ?? throw new InvalidOperationException("CalendarService:Url configuration value is not set.");
 
-var services = new ServiceCollection();
-services.SetupServices(ConfigurationBuilder.BuildConfiguration());
+using var channel = GrpcChannel.ForAddress(calendarServiceUrl);
+var client = new Calendar.CalendarClient(channel);
 
-var serviceProvider = services.BuildServiceProvider();
-var quarterComponent = serviceProvider.GetRequiredService<IQuarterComponent>();
-var weekComponent = serviceProvider.GetRequiredService<IWeekComponent>();
+var yearsToCreate = new List<int> { 2032 };
 
 foreach (var year in yearsToCreate)
 {
     Console.WriteLine($"Creating quarters for year {year}");
-    var quartersResult = await quarterComponent.CreateQuartersByYear(year);
-    if (!quartersResult.IsSuccess)
+
+    QuartersReply quartersReply;
+    try
     {
-        Console.WriteLine($"Failed to create quarters for year {year}: {quartersResult.FirstError!.Message}");
+        quartersReply = await client.CreateQuartersByYearAsync(new YearRequest { Year = year });
+    }
+    catch (RpcException ex)
+    {
+        Console.WriteLine($"Failed to create quarters for year {year}: {ex.Status.StatusCode} - {ex.Status.Detail}");
         continue;
     }
 
-    foreach (var quarter in quartersResult.Value)
+    foreach (var quarter in quartersReply.Quarters)
     {
         Console.WriteLine("----------- Quarter -----------");
-        Console.WriteLine($"Quarter {quarter.Code}: {quarter.StartDate} - {quarter.EndDate}");
+        Console.WriteLine($"Quarter {quarter.Code}: {FormatDate(quarter.StartDate)} - {FormatDate(quarter.EndDate)}");
         Console.WriteLine($"Creating weeks for quarter {quarter.Code}");
 
-        var weeksResult = await weekComponent.CreateWeeksByQuarter(quarter.Code);
-        if (!weeksResult.IsSuccess)
+        WeeksReply weeksReply;
+        try
         {
-            Console.WriteLine($"Failed to create weeks for quarter {quarter.Code}: {weeksResult.FirstError!.Message}");
+            weeksReply = await client.CreateWeeksByQuarterAsync(new CreateWeeksByQuarterRequest { QuarterCode = quarter.Code });
+        }
+        catch (RpcException ex)
+        {
+            Console.WriteLine($"Failed to create weeks for quarter {quarter.Code}: {ex.Status.StatusCode} - {ex.Status.Detail}");
             continue;
         }
 
-        foreach (var week in weeksResult.Value)
+        foreach (var week in weeksReply.Weeks)
         {
-            Console.WriteLine($"Week {week.Code}: {week.StartDate} - {week.EndDate}");
+            Console.WriteLine($"Week {week.Code}: {FormatDate(week.StartDate)} - {FormatDate(week.EndDate)}");
         }
     }
 }
 
+Console.ReadLine();
 
-
-
-
-
-
-
-
-
+static string FormatDate(Date date) => $"{date.Year:D4}-{date.Month:D2}-{date.Day:D2}";

@@ -325,7 +325,7 @@ This is exactly the kind of regression a thin `WeekRepository` integration test 
 - **Fortnight is still a complete stub** (`FortnightComponent`, `IFortnightComponent`, `IFortnightRepository`, `FortnightRepository`, `Fortnight` entity are all empty; `CalendarService`'s three Fortnight RPCs still just `// TODO` + fall through to `base.*` → `Unimplemented`). No `FortnightHelper` exists yet either. Tracked correctly as a deliberate "not yet designed" gap, not a bug.
 - **DTO/Domain duplication remains** — `QuarterDTO`/`WeekDTO`/`FortnightDTO` still mirror their Domain entities exactly except `DateTime` vs `DateOnly`, and `MapFromDTO`/`MapToDTO` naming still reads backwards.
 - **`TimeOnly.MinValue` (Components) vs `new TimeOnly()` (DTOs)** — same value, still two spellings.
-- **`ServiceCollectionExtension.cs` is still byte-for-byte duplicated** between `Vicgital.Calendar.Service` and `Vicgital.Calendar.Setup`, including `GetSqlConnectionString()`.
+- ~~`ServiceCollectionExtension.cs` is still byte-for-byte duplicated between `Vicgital.Calendar.Service` and `Vicgital.Calendar.Setup`, including `GetSqlConnectionString()`.~~ *(Moot as of 2026-07-31 — `Vicgital.Calendar.Setup` was converted to a gRPC client of the deployed service and no longer touches the database directly; it has no `ServiceCollectionExtension.cs` at all now.)*
 - ~~`QuarterComponent.CreateQuartersByYear`/`WeekComponent.CreateWeeksByQuarter` still loop `SELECT` + `INSERT` per item with no transaction.~~ *(Fixed 2026-07-31 — batched into one existence-check query and one multi-row insert each; see `TECH_DEBT.md`.)*
 - **No `RuntimeIdentifier` anywhere** — already tracked in `TECH_DEBT.md` as the one remaining Docker-image-size item; still unaddressed.
 - **No `global.json`.**

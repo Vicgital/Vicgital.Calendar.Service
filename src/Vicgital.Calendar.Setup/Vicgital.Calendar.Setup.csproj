@@ -6,19 +6,14 @@
 
 	<ItemGroup>
 		<PackageReference Include="Vicgital.Core.Configuration" />
-		<PackageReference Include="Vicgital.Core.Logging" />		
-	</ItemGroup>	
+		<PackageReference Include="Vicgital.Calendar.Service.Definition" />
+		<PackageReference Include="Grpc.Net.Client" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<Content Include="appsettings.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
-	</ItemGroup>
-
-	<ItemGroup>
-		<ProjectReference Include="..\Vicgital.Calendar.Application\Vicgital.Calendar.Application.csproj" />
-		<ProjectReference Include="..\Vicgital.Calendar.Infrastructure\Vicgital.Calendar.Infrastructure.csproj" />
-		<ProjectReference Include="..\Vicgital.Calendar.Service.Definition\Vicgital.Calendar.Service.Definition.csproj" />
 	</ItemGroup>
 
 </Project>
