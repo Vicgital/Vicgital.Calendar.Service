@@ -21,7 +21,7 @@ Tracked improvements that are safe to defer but shouldn't be forgotten. Each ite
   **Action:** find which internal package (`Vicgital.Data.Sql`, `Vicgital.Core.Configuration`, etc.) pulls in EF Core transitively and see if it can be split so services that only need Dapper don't pay for it.
   Effort: medium (requires changes in a shared internal package, out of scope for this repo alone).
 
-- [x] Base image: already on `mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled`, which is the right call and accounts for the bulk of the size difference vs. the non-chiseled tag — no action needed here.
+- [x] Base image: on `mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra`, which is the right call and accounts for the bulk of the size difference vs. the non-chiseled tag. **Correction (2026-07-31):** the plain `-chiseled` tag (no `-extra`) strips ICU/tzdata and forces Globalization Invariant Mode, which `Microsoft.Data.SqlClient` doesn't support — `SqlConnection.Open()` throws `NotSupportedException` at runtime. Switched to `-chiseled-extra` (adds ICU + tzdata back, no invariant-mode env var), which still keeps the distroless/no-shell benefits. Measured app-layer size separately from the base image: publish output is ~13MB; the rest is the base image.
 
 ## Performance
 
