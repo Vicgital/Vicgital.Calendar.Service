@@ -1,4 +1,5 @@
-﻿using Vicgital.Calendar.Application.DTO;
+﻿using Dapper;
+using Vicgital.Calendar.Application.DTO;
 using Vicgital.Calendar.Application.Interfaces.Repositories;
 using Vicgital.Data.Sql.Abstractions;
 
@@ -8,25 +9,47 @@ namespace Vicgital.Calendar.Infrastructure.Repositories
     {
         private readonly IDapperQueryExecutor _dapper = dapper;
 
-        public async Task<QuarterDTO> CreateQuarterAsync(QuarterDTO quarter, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<QuarterDTO>> CreateQuartersAsync(IEnumerable<QuarterDTO> quarters, CancellationToken cancellationToken = default)
         {
-            var newQuarter =
-                await _dapper.QuerySingleAsync<QuarterDTO>(@"INSERT INTO [dbo].[Quarter] (
+            var quarterList = quarters as IReadOnlyList<QuarterDTO> ?? [.. quarters];
+            if (quarterList.Count == 0) return [];
+
+            var parameters = new DynamicParameters();
+            var rows = new string[quarterList.Count];
+
+            for (var i = 0; i < quarterList.Count; i++)
+            {
+                rows[i] = $"(@Code{i}, @StartDate{i}, @EndDate{i})";
+                parameters.Add($"Code{i}", quarterList[i].Code);
+                parameters.Add($"StartDate{i}", quarterList[i].StartDate);
+                parameters.Add($"EndDate{i}", quarterList[i].EndDate);
+            }
+
+            var inserted = await _dapper.QueryAsync<QuarterDTO>($@"INSERT INTO [dbo].[Quarter] (
                         [Code],
                         [StartDate],
-                        [EndDate]) 
+                        [EndDate])
                         OUTPUT INSERTED.*
-                        VALUES(
-                        @Code, 
-                        @StartDate, 
-                        @EndDate)", new
-                {
-                    quarter.Code,
-                    quarter.StartDate,
-                    quarter.EndDate,
-                }, cancellationToken: cancellationToken);
+                        VALUES {string.Join(", ", rows)}", parameters, cancellationToken: cancellationToken);
 
-            return newQuarter;
+            return [.. inserted];
+        }
+
+        public async Task<IReadOnlyList<QuarterDTO>> GetQuartersByCodesAsync(IEnumerable<string> codes, CancellationToken cancellationToken = default)
+        {
+            var codeList = codes as IReadOnlyCollection<string> ?? [.. codes];
+            if (codeList.Count == 0) return [];
+
+            var quarters = await _dapper.QueryAsync<QuarterDTO>(
+                @"SELECT
+                     [Id]
+                    ,[Code]
+                    ,[StartDate]
+                    ,[EndDate]
+                    FROM [dbo].[Quarter]
+                    WHERE [Code] IN @Codes", new { Codes = codeList }, cancellationToken: cancellationToken);
+
+            return [.. quarters];
         }
 
         public async Task<QuarterDTO?> GetQuarterAsync(string code, CancellationToken cancellationToken = default)

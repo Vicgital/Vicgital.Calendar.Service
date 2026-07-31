@@ -8,10 +8,12 @@ service Calendar {
 	rpc GetQuarter (QuarterRequest) returns (QuarterModel);
 	rpc GetQuartersByYear (YearRequest) returns (QuartersReply);
 	rpc GetQuarterByDate (DateRequest) returns (QuarterModel);
+	rpc CreateQuartersByYear (YearRequest) returns (QuartersReply);
 
 	rpc GetWeek (WeekRequest) returns (WeekModel);
 	rpc GetWeeksByQuarter (QuarterRequest) returns (WeeksReply);
 	rpc GetWeekByDate (DateRequest) returns (WeekModel);
+	rpc CreateWeeksByQuarter (CreateWeeksByQuarterRequest) returns (WeeksReply);
 
 	rpc GetFortnight (FortnightRequest) returns (FortnightModel);
 	rpc GetFortnightsByYear (YearRequest) returns (FortnightsReply);
@@ -29,6 +31,10 @@ message WeekRequest {
 		int32 id = 1;
 		string code = 2;
 	}
+}
+
+message CreateWeeksByQuarterRequest {
+	string quarterCode = 1;
 }
 
 message WeeksReply {

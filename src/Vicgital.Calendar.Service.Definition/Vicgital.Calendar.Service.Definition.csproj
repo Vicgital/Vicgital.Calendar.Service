@@ -3,7 +3,7 @@
 	<PropertyGroup>
 		<AssemblyName>Vicgital.Calendar.Service.Definition</AssemblyName>
 		<PackageId>Vicgital.Calendar.Service.Definition</PackageId>
-		<Version>2.0.0</Version>
+		<Version>2.1.0</Version>
 		<Authors>Vicgital</Authors>
 		<RepositoryUrl>https://github.com/vicgital/Vicgital.Calendar.Service</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>

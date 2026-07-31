@@ -27,10 +27,11 @@ namespace Vicgital.Calendar.Application.Components.Caching
         public Task<Result<Week>> GetWeekByDateAsync(DateOnly date, CancellationToken ct = default)
             => cache.GetOrCreateAsync(WeekCacheKeys.ByDate(date), token => inner.GetWeekByDateAsync(date, token), Options, ct);
 
-        public async Task<IReadOnlyList<Week>> CreateWeeksByQuarter(string quarterCode, CancellationToken ct = default)
+        public async Task<Result<IReadOnlyList<Week>>> CreateWeeksByQuarter(string quarterCode, CancellationToken ct = default)
         {
             var created = await inner.CreateWeeksByQuarter(quarterCode, ct);
-            cache.RemoveByPrefix(WeekCacheKeys.Prefix);
+            if (created.IsSuccess)
+                cache.RemoveByPrefix(WeekCacheKeys.Prefix);
             return created;
         }
     }

@@ -326,7 +326,7 @@ This is exactly the kind of regression a thin `WeekRepository` integration test 
 - **DTO/Domain duplication remains** — `QuarterDTO`/`WeekDTO`/`FortnightDTO` still mirror their Domain entities exactly except `DateTime` vs `DateOnly`, and `MapFromDTO`/`MapToDTO` naming still reads backwards.
 - **`TimeOnly.MinValue` (Components) vs `new TimeOnly()` (DTOs)** — same value, still two spellings.
 - **`ServiceCollectionExtension.cs` is still byte-for-byte duplicated** between `Vicgital.Calendar.Service` and `Vicgital.Calendar.Setup`, including `GetSqlConnectionString()`.
-- **`QuarterComponent.CreateQuartersByYear`/`WeekComponent.CreateWeeksByQuarter` still loop `SELECT` + `INSERT` per item with no transaction** — already tracked in `TECH_DEBT.md` as the one remaining Performance item.
+- ~~`QuarterComponent.CreateQuartersByYear`/`WeekComponent.CreateWeeksByQuarter` still loop `SELECT` + `INSERT` per item with no transaction.~~ *(Fixed 2026-07-31 — batched into one existence-check query and one multi-row insert each; see `TECH_DEBT.md`.)*
 - **No `RuntimeIdentifier` anywhere** — already tracked in `TECH_DEBT.md` as the one remaining Docker-image-size item; still unaddressed.
 - **No `global.json`.**
 - ~~`calendar.proto` still has no `oneof` for the recurring Id-or-Code pattern, and dates are still culture-sensitive `MM/dd/yyyy` strings.~~ *(Fixed same day, see addendum below.)*

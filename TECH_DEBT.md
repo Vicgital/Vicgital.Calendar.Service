@@ -40,7 +40,7 @@ Tracked improvements that are safe to defer but shouldn't be forgotten. Each ite
   **Fix:** list explicit columns in each query.
   Effort: low.
 
-- [ ] **Sequential per-row DB round trips in the seeding loops** (`QuarterComponent.CreateQuartersByYear`, `WeekComponent.CreateWeeksByQuarter`): for each item, one `SELECT` to check existence followed by one `INSERT`, done serially in a `foreach`.
+- [x] **Sequential per-row DB round trips in the seeding loops** (`QuarterComponent.CreateQuartersByYear`, `WeekComponent.CreateWeeksByQuarter`): for each item, one `SELECT` to check existence followed by one `INSERT`, done serially in a `foreach`.
   Not a hot path (admin/seed operation), but for a full year/quarter it's N*2 sequential round trips where one existence-check query (`WHERE Code IN (...)`) plus a single multi-row insert would do.
-  **Fix:** batch the existence check and insert.
-  Effort: low-medium. Low priority since this isn't on the request-serving path.
+  **Fix:** replaced the per-item `GetQuarterAsync(code)`/`CreateQuarterAsync` (and the `Week` equivalents) with batched `GetQuartersByCodesAsync(codes)` (`WHERE Code IN @Codes`, one round trip) and `CreateQuartersAsync(quarters)` (single multi-row `INSERT ... OUTPUT INSERTED.*` built via `Dapper.DynamicParameters`, one round trip). N\*2 round trips are now 2 total. Also fixes the "no transaction" note below as a side effect for the insert half — a single multi-row `INSERT` statement is atomic, so a partial-year failure can no longer leave some quarters/weeks committed and others not (the existence-check-then-throw is still a separate statement, but nothing is written until it passes).
+  Effort: low-medium.

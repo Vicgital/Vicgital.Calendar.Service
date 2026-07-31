@@ -43,6 +43,16 @@ namespace Vicgital.Calendar.Service.Implementation
             return result.Unwrap().ToProto();
         }
 
+        public async override Task<QuartersReply> CreateQuartersByYear(YearRequest request, ServerCallContext context)
+        {
+            var quarters = (await _quarterComponent.CreateQuartersByYear(request.Year, context.CancellationToken)).Unwrap();
+
+            QuartersReply reply = new();
+            reply.Quarters.AddRange(quarters.Select(q => q.ToProto()));
+
+            return reply;
+        }
+
         #endregion
 
         #region Week
@@ -72,6 +82,16 @@ namespace Vicgital.Calendar.Service.Implementation
         {
             var result = await _weekComponent.GetWeekByDateAsync(request.Date.ToDateOnly(), context.CancellationToken);
             return result.Unwrap().ToProto();
+        }
+
+        public async override Task<WeeksReply> CreateWeeksByQuarter(CreateWeeksByQuarterRequest request, ServerCallContext context)
+        {
+            var weeks = (await _weekComponent.CreateWeeksByQuarter(request.QuarterCode, context.CancellationToken)).Unwrap();
+
+            WeeksReply reply = new();
+            reply.Weeks.AddRange(weeks.Select(w => w.ToProto()));
+
+            return reply;
         }
 
         #endregion

@@ -1,4 +1,5 @@
-﻿using Vicgital.Calendar.Application.DTO;
+﻿using Dapper;
+using Vicgital.Calendar.Application.DTO;
 using Vicgital.Calendar.Application.Interfaces.Repositories;
 using Vicgital.Data.Sql.Abstractions;
 
@@ -8,23 +9,48 @@ namespace Vicgital.Calendar.Infrastructure.Repositories
     {
         private readonly IDapperQueryExecutor _dapper = dapper;
 
-        public async Task<WeekDTO> CreateWeekAsync(WeekDTO week, CancellationToken cancellationToken = default)
-        {
-            var newWeek = await _dapper.QuerySingleAsync<WeekDTO>(
-                @"INSERT INTO [dbo].[Week] (
-                    [QuarterId], 
-                    [Code], 
+        public async Task<IReadOnlyList<WeekDTO>> CreateWeeksAsync(IEnumerable<WeekDTO> weeks, CancellationToken cancellationToken = default)
+        {            
+            var weekList = weeks as IReadOnlyList<WeekDTO> ?? [.. weeks];
+            if (weekList.Count == 0) return [];
+
+            var parameters = new DynamicParameters();
+            var rows = new string[weekList.Count];
+
+            for (var i = 0; i < weekList.Count; i++)
+            {
+                rows[i] = $"(@QuarterId{i}, @Code{i}, @StartDate{i}, @EndDate{i})";
+                parameters.Add($"QuarterId{i}", weekList[i].QuarterId);
+                parameters.Add($"Code{i}", weekList[i].Code);
+                parameters.Add($"StartDate{i}", weekList[i].StartDate);
+                parameters.Add($"EndDate{i}", weekList[i].EndDate);
+            }
+
+            var inserted = await _dapper.QueryAsync<WeekDTO>(
+                $@"INSERT INTO [dbo].[Week] (
+                    [QuarterId],
+                    [Code],
                     [StartDate],
                     [EndDate])
                 OUTPUT INSERTED.*
-                VALUES (
-                    @QuarterId, 
-                    @Code, 
-                    @StartDate, 
-                    @EndDate)", new { week.QuarterId, week.Code, week.StartDate, week.EndDate }, cancellationToken: cancellationToken);
+                VALUES {string.Join(", ", rows)}", parameters, cancellationToken: cancellationToken);
 
-            return newWeek;
+            return [.. inserted];
+        }
 
+        public async Task<IReadOnlyList<WeekDTO>> GetWeeksByCodesAsync(IEnumerable<string> codes, CancellationToken cancellationToken = default)
+        {
+            var codeList = codes as IReadOnlyCollection<string> ?? [.. codes];
+            if (codeList.Count == 0) return [];
+
+            return [.. (await _dapper.QueryAsync<WeekDTO>(
+                @"SELECT
+                     [Id]
+                    ,[QuarterId]
+                    ,[Code]
+                    ,[StartDate]
+                    ,[EndDate] FROM [dbo].[Week] WHERE [Code] IN @Codes",
+                new { Codes = codeList }, cancellationToken: cancellationToken))];
         }
 
         public async Task<WeekDTO?> GetWeekAsync(string code, CancellationToken cancellationToken = default)
