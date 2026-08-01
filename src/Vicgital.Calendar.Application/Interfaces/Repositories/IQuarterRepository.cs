@@ -11,6 +11,5 @@ namespace Vicgital.Calendar.Application.Interfaces.Repositories
         Task<IReadOnlyList<QuarterDTO>> GetQuartersByYearAsync(int year, CancellationToken cancellationToken = default);
         Task<QuarterDTO?> GetQuarterByDate(DateTime date, CancellationToken cancellationToken = default);
 
-
     }
 }

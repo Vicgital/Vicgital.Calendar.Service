@@ -17,7 +17,8 @@ service Calendar {
 
 	rpc GetFortnight (FortnightRequest) returns (FortnightModel);
 	rpc GetFortnightsByYear (YearRequest) returns (FortnightsReply);
-	rpc GetFortnightsByMonthAndYear (MonthRequest) returns (FortnightsReply);
+	rpc GetFortnightByDate (DateRequest) returns (FortnightModel);
+	rpc CreateFortnightsByYear (YearRequest) returns (FortnightsReply);
 
 
 }
@@ -71,18 +72,11 @@ message QuarterModel {
 }
 
 
-
-
 message FortnightRequest {
 	oneof identifier {
 		int32 id = 1;
 		string code = 2;
 	}
-}
-
-message MonthRequest {
-	int32 month = 1;
-	int32 year = 2;
 }
 
 message FortnightsReply {

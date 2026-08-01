@@ -98,24 +98,42 @@ namespace Vicgital.Calendar.Service.Implementation
 
         #region Fortnight
 
-        public override Task<FortnightModel> GetFortnight(FortnightRequest request, ServerCallContext context)
+        public async override Task<FortnightModel> GetFortnight(FortnightRequest request, ServerCallContext context)
         {
-            // TODO
-            return base.GetFortnight(request, context);
+            var result = request.IdentifierCase == FortnightRequest.IdentifierOneofCase.Id
+                ? await _fortnightComponent.GetFortnightAsync(request.Id, context.CancellationToken)
+                : await _fortnightComponent.GetFortnightAsync(request.Code, context.CancellationToken);
+
+            return result.Unwrap().ToProto();
         }
 
-        public override Task<FortnightsReply> GetFortnightsByMonthAndYear(MonthRequest request, ServerCallContext context)
+        public async override Task<FortnightsReply> GetFortnightsByYear(YearRequest request, ServerCallContext context)
         {
-            // TODO
-            return base.GetFortnightsByMonthAndYear(request, context);
+            FortnightsReply reply = new();
+
+            var fortnights = await _fortnightComponent.GetFortnightsByYearAsync(request.Year, context.CancellationToken);
+            reply.Fortnights.AddRange(fortnights.Select(f => f.ToProto()));
+
+            return reply;
         }
 
-        public override Task<FortnightsReply> GetFortnightsByYear(YearRequest request, ServerCallContext context)
+        public async override Task<FortnightModel> GetFortnightByDate(DateRequest request, ServerCallContext context)
         {
-            // TODO
-            return base.GetFortnightsByYear(request, context);
+            var result = await _fortnightComponent.GetFortnightByDateAsync(request.Date.ToDateOnly(), context.CancellationToken);
+            return result.Unwrap().ToProto();
         }
+
+        public async override Task<FortnightsReply> CreateFortnightsByYear(YearRequest request, ServerCallContext context)
+        {
+            var fortnights = (await _fortnightComponent.CreateFortnightsByYear(request.Year, context.CancellationToken)).Unwrap();
+
+            FortnightsReply reply = new();
+            reply.Fortnights.AddRange(fortnights.Select(f => f.ToProto()));
+
+            return reply;
+        }        
 
         #endregion
+
     }
 }

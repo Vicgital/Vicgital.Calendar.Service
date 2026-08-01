@@ -35,10 +35,12 @@ namespace Vicgital.Calendar.Service
             services.AddScoped<WeekComponent>();
             services.AddScoped<IWeekComponent>(sp => new CachedWeekComponent(sp.GetRequiredService<WeekComponent>(), sp.GetRequiredService<ICacheService>()));
 
-            services.AddScoped<IFortnightComponent, FortnightComponent>();
+            services.AddScoped<FortnightComponent>();
+            services.AddScoped<IFortnightComponent>(sp => new CachedFortnightComponent(sp.GetRequiredService<FortnightComponent>(), sp.GetRequiredService<ICacheService>()));
 
             // Add Validators
             services.AddScoped<IValidator<QuarterRequest>, QuarterRequestValidator>();
+            services.AddScoped<IValidator<FortnightRequest>, FortnightRequestValidator>();
             services.AddScoped<IValidator<YearRequest>, YearRequestValidator>();
             services.AddScoped<IValidator<DateRequest>, DateRequestValidator>();
             services.AddScoped<IValidator<WeekRequest>, WeekRequestValidator>();

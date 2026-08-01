@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "Vicgital.Calendar.Setup": {
-      "commandName": "Project",
-      "environmentVariables": {
-      }
-    }
-  }
-}
